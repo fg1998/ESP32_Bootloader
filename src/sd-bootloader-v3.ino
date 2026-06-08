@@ -38,7 +38,8 @@ void initVGA() {
         GPIO_NUM_5,  GPIO_NUM_4,
         GPIO_NUM_23, GPIO_NUM_15
     );
-    VGAController.setResolution(VGA_640x200_70Hz);
+    //VGAController.setResolution(VGA_640x200_70Hz);
+    VGAController.setResolution(VGA_320x200_70Hz);
     Terminal.begin(&VGAController);
     Terminal.connectLocally();
     Terminal.clear();
@@ -51,6 +52,29 @@ void drawHeader() {
     Terminal.write("\e[0;34m por fg1998  github.com/fg1998\r\n");
     Terminal.write("\e[0;34m ------------------------------------------------\r\n");
 }
+
+void drawHeaderANSI() {
+
+Terminal.write("ESP32\r\n");
+
+Terminal.write("\r\n\r\n\r\n\r\n\r\n\r\n");
+
+
+
+Terminal.write("\e[1;36m");  // ciano
+Terminal.write("ESP32\r\n");
+Terminal.write("\e[1;33m");  // amarelo
+Terminal.write("BOOTLOADER\r\n\r\n");
+
+/*
+
+    // separador
+    Terminal.write("\e[0;34m \xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\r\n");
+    Terminal.write("\e[0;32m  by fg1998  \xf9  github.com/fg1998  \xf9  SD Card Firmware Loader\r\n");
+    Terminal.write("\e[0;34m \xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\r\n");
+
+    */
+    }
 
 // ─── Linha de status ──────────────────────────────────────────────────────────
 void statusLine(const char* label, const char* value, const char* color) {
@@ -230,11 +254,12 @@ void setup() {
     // bootCount == 1 → power on → mostra carregador
     Serial.printf("Heap: %d  PSRAM: %s\n", ESP.getFreeHeap(), psramFound() ? "SIM" : "NAO");
 
-    // Inicializa VGA
+    // Inicializa   
     Serial.println("Iniciando VGA...");
     initVGA();
     Serial.println("VGA OK");
-    drawHeader();
+    drawHeaderANSI();
+    delay(5000);
 
     // Inicializa SD
     spiSD.begin(SD_CLK, SD_MISO, SD_MOSI, SD_CS);
