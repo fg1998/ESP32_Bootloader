@@ -258,7 +258,7 @@ void setup() {
     Serial.println("Iniciando VGA...");
     initVGA();
     Serial.println("VGA OK");
-    drawHeaderANSI();
+    drawHeader();
     delay(5000);
 
     // Inicializa SD
