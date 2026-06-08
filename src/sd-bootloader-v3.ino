@@ -38,12 +38,14 @@ void initVGA() {
         GPIO_NUM_5,  GPIO_NUM_4,
         GPIO_NUM_23, GPIO_NUM_15
     );
-    //VGAController.setResolution(VGA_640x200_70Hz);
+    //VGAController.setResolution(VGA_640x200_70Hz);  <--- Quando acionado DEU PAU !!! Sei lá pq !
     VGAController.setResolution(VGA_320x200_70Hz);
+    
     Terminal.begin(&VGAController);
     Terminal.connectLocally();
     Terminal.clear();
     Terminal.enableCursor(false);
+    Terminal.loadFont(&fabgl::FONT_6x8);
 }
 
 // ─── Tela de boot ─────────────────────────────────────────────────────────────
