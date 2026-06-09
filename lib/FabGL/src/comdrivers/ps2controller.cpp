@@ -1249,7 +1249,7 @@ void PS2Controller::begin(PS2Preset preset, KbdMode keyboardMode)
   };
 }
 
-
+/*
 void PS2Controller::end()
 {
   if (s_initDone) {
@@ -1270,6 +1270,23 @@ void PS2Controller::end()
     for (int i = RTCMEM_PROG_START; i < RTCMEM_LASTVAR; ++i)
       RTC_SLOW_MEM[i] = 0x0000;
     s_initDone = false;
+  }
+}
+  */
+
+  void PS2Controller::end()
+{
+  if (s_initDone) {
+    if (s_keyboardAllocated)
+      delete s_keyboard;
+    s_keyboard = nullptr;
+
+    if (s_mouseAllocated)
+      delete s_mouse;
+    s_mouse = nullptr;
+
+    for (int p = 0; p < 2; ++p)
+      disableRX(p);
   }
 }
 
