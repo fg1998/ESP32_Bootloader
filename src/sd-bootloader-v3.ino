@@ -38,8 +38,8 @@ void initVGA() {
         GPIO_NUM_5,  GPIO_NUM_4,
         GPIO_NUM_23, GPIO_NUM_15
     );
-    //VGAController.setResolution(VGA_640x200_70Hz);  <--- Quando acionado DEU PAU !!! Sei lá pq !
-    VGAController.setResolution(VGA_320x200_70Hz);
+    VGAController.setResolution(VGA_640x200_70Hz);  //<--- Quando acionado DEU PAU !!! Sei lá pq !
+    //VGAController.setResolution(VGA_320x200_70Hz);
     
     Terminal.begin(&VGAController);
     Terminal.connectLocally();
@@ -124,7 +124,11 @@ void bootEmulatorDirect() {
         Serial.printf("Boot partition: %s @ 0x%x\n", ota0->label, ota0->address);
     }
     delay(500);
-    ESP.restart();
+    Terminal.end();
+VGAController.end();
+PS2Controller.end();  // agora para o ULP de verdade
+delay(200);
+ESP.restart();
 }
 
 // ─── Boot para ota_0 apagando otadata (após novo firmware) ───────────────────
@@ -155,7 +159,11 @@ void bootEmulator() {
     }
 
     delay(500);
-    ESP.restart();
+    Terminal.end();
+VGAController.end();
+PS2Controller.end();  // agora para o ULP de verdade
+delay(200);
+ESP.restart();
 }
 
 // ─── OTA: grava firmware.bin EXPLICITAMENTE em ota_0 ─────────────────────────
