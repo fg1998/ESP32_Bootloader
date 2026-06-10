@@ -1,4 +1,4 @@
-# 🚀 ESP32 BOOTLOADER
+<img src="https://alternativebits.com/esp32/logo.png" alt="ESP32 Logo"/>
 
 **[ENGLISH](#-english) | [PORTUGUÊS](#-português) | [ESPAÑOL](#-español)**
 
@@ -69,8 +69,8 @@ pio run --target upload
 
 ## 4. Where to find the emulators?
 
-- **ESPectrum:** [zxespectrum.speccy.org/flash](https://zxespectrum.speccy.org/flash/) — get the `.upg` file · [Direct download](https://alternativebits.com/ESP32/ESPectrum_1.4.5.zip)
-- **CPC:** [Direct download](https://alternativebits.com/ESP32/CPCESP_0.85.zip)
+- **ESPectrum:** [zxespectrum.speccy.org/flash](https://zxespectrum.speccy.org/flash/) — get the `.upg` file · [Direct download](https://alternativebits.com/esp32/ESPectrum.zip)
+- **CPC:** [Direct download](https://alternativebits.com/esp32/CPCESP.zip)
 - **MSPX:** Available only to Eremus sponsors. Link coming soon.
 
 ## 4.1. How to extract the correct firmware.bin
@@ -197,8 +197,8 @@ pio run --target upload
 
 ## 4. Onde encontrar os emuladores?
 
-- **ESPectrum:** [zxespectrum.speccy.org/flash](https://zxespectrum.speccy.org/flash/) — pegue o `.upg` · [Download direto](https://alternativebits.com/ESP32/ESPectrum_1.4.5.zip)
-- **CPC:** [Download direto](https://alternativebits.com/ESP32/CPCESP_0.85.zip)
+- **ESPectrum:** [zxespectrum.speccy.org/flash](https://zxespectrum.speccy.org/flash/) — pegue o `.upg` · [Download direto](https://alternativebits.com/esp32/ESPectrum.zip)
+- **CPC:** [Download direto](https://alternativebits.com/esp32/CPCESP.zip)
 - **MSPX:** Disponível apenas para patrocinadores do Eremus. Link em breve.
 
 ## 4.1. Como extrair o firmware.bin correto do arquivo merged
@@ -323,8 +323,8 @@ pio run --target upload
 
 ## 4. ¿Dónde encontrar los emuladores?
 
-- **ESPectrum:** [zxespectrum.speccy.org/flash](https://zxespectrum.speccy.org/flash/) — obtén el `.upg` · [Descarga directa](https://alternativebits.com/ESP32/ESPectrum_1.4.5.zip)
-- **CPC:** [Descarga directa](https://alternativebits.com/ESP32/CPCESP_0.85.zip)
+- **ESPectrum:** [zxespectrum.speccy.org/flash](https://zxespectrum.speccy.org/flash/) — obtén el `.upg` · [Descarga directa](https://alternativebits.com/esp32/ESPectrum.zip)
+- **CPC:** [Descarga directa](https://alternativebits.com/esp32/CPCESP.zip)
 - **MSPX:** Disponible solo para patrocinadores de Eremus. Enlace próximamente.
 
 ## 4.1. Cómo extraer el firmware.bin correcto
