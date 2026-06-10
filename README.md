@@ -77,22 +77,24 @@ pio run --target upload
 
 ### For MSPX and CPC (offset 0x40000)
 ```python
+python3 -c "
 with open('firmware_merged.bin', 'rb') as f:
     data = f.read()
 app = data[0x40000:]
 with open('firmware.bin', 'wb') as f:
     f.write(app)
-print(f'firmware.bin: {len(app)//1024} KB')
+print(f'firmware.bin: {len(app)//1024} KB')"
 ```
 
 ### To find the correct offset for any .bin
 ```python
+python3 -c "
 with open('firmware_merged.bin', 'rb') as f:
     data = f.read()
 print(f'Total size: {len(data)} bytes ({len(data)//1024} KB)')
 for offset in [0x0000, 0x1000, 0x8000, 0xe000, 0x10000, 0x40000, 0x90000, 0xa0000]:
     if offset < len(data):
-        print(f'offset 0x{offset:05X}: 0x{data[offset]:02X}')
+        print(f'offset 0x{offset:05X}: 0x{data[offset]:02X}')"
 ```
 Look for offsets returning `0xE9`. The **first** is the bootloader (skip). The **second** is the app (use this).
 
@@ -203,22 +205,24 @@ pio run --target upload
 
 ### Para MSPX e CPC (offset 0x40000)
 ```python
+python3 -c "
 with open('firmware_merged.bin', 'rb') as f:
     data = f.read()
 app = data[0x40000:]
 with open('firmware.bin', 'wb') as f:
     f.write(app)
-print(f'firmware.bin: {len(app)//1024} KB')
+print(f'firmware.bin: {len(app)//1024} KB')"
 ```
 
 ### Para descobrir o offset correto de qualquer .bin
 ```python
+python3 -c "
 with open('firmware_merged.bin', 'rb') as f:
     data = f.read()
 print(f'Tamanho total: {len(data)} bytes ({len(data)//1024} KB)')
 for offset in [0x0000, 0x1000, 0x8000, 0xe000, 0x10000, 0x40000, 0x90000, 0xa0000]:
     if offset < len(data):
-        print(f'offset 0x{offset:05X}: 0x{data[offset]:02X}')
+        print(f'offset 0x{offset:05X}: 0x{data[offset]:02X}')"
 ```
 Procure pelos offsets que retornam `0xE9`. O **primeiro** é o bootloader (não usar). O **segundo** é o app (usar esse).
 
@@ -327,22 +331,24 @@ pio run --target upload
 
 ### Para MSPX y CPC (offset 0x40000)
 ```python
+python3 -c "
 with open('firmware_merged.bin', 'rb') as f:
     data = f.read()
 app = data[0x40000:]
 with open('firmware.bin', 'wb') as f:
     f.write(app)
-print(f'firmware.bin: {len(app)//1024} KB')
+print(f'firmware.bin: {len(app)//1024} KB')"
 ```
 
 ### Para descubrir el offset correcto de cualquier .bin
 ```python
+python3 -c "
 with open('firmware_merged.bin', 'rb') as f:
     data = f.read()
 print(f'Tamaño total: {len(data)} bytes ({len(data)//1024} KB)')
 for offset in [0x0000, 0x1000, 0x8000, 0xe000, 0x10000, 0x40000, 0x90000, 0xa0000]:
     if offset < len(data):
-        print(f'offset 0x{offset:05X}: 0x{data[offset]:02X}')
+        print(f'offset 0x{offset:05X}: 0x{data[offset]:02X}')"
 ```
 Busca los offsets que devuelven `0xE9`. El **primero** es el bootloader (no usar). El **segundo** es el app (usar este).
 
