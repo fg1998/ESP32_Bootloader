@@ -1199,57 +1199,14 @@ void PS2Controller::begin(gpio_num_t port0_clkGPIO, gpio_num_t port0_datGPIO, gp
 
 void PS2Controller::begin(PS2Preset preset, KbdMode keyboardMode)
 {
-  end();
-
-  bool generateVirtualKeys = (keyboardMode == KbdMode::GenerateVirtualKeys || keyboardMode == KbdMode::CreateVirtualKeysQueue);
-  bool createVKQueue       = (keyboardMode == KbdMode::CreateVirtualKeysQueue);
-  switch (preset) {
-    case PS2Preset::KeyboardPort0_MousePort1:
-      // both keyboard (port 0) and mouse configured (port 1)
-      begin(GPIO_NUM_33, GPIO_NUM_32, GPIO_NUM_26, GPIO_NUM_27);
-      setKeyboard(new Keyboard);
-      keyboard()->begin(generateVirtualKeys, createVKQueue, 0);
-      setMouse(new Mouse);
-      mouse()->begin(1);
-      s_keyboardAllocated = s_mouseAllocated = true;
-      break;
-    case PS2Preset::KeyboardPort1_MousePort0:
-      // both keyboard (port 1) and mouse configured (port 0)
-      begin(GPIO_NUM_33, GPIO_NUM_32, GPIO_NUM_26, GPIO_NUM_27);
-      setMouse(new Mouse);
-      mouse()->begin(0);
-      setKeyboard(new Keyboard);
-      keyboard()->begin(generateVirtualKeys, createVKQueue, 1);
-      s_keyboardAllocated = s_mouseAllocated = true;
-      break;
-    case PS2Preset::KeyboardPort0:
-      // only keyboard configured on port 0
-      // this will call setKeyboard and begin()
-      (new Keyboard)->begin(GPIO_NUM_33, GPIO_NUM_32, generateVirtualKeys, createVKQueue);
-      s_keyboardAllocated = true;
-      break;
-    case PS2Preset::KeyboardPort1:
-      // only keyboard configured on port 1
-      // this will call setKeyboard and begin()
-      (new Keyboard)->begin(GPIO_NUM_26, GPIO_NUM_27, generateVirtualKeys, createVKQueue);
-      s_keyboardAllocated = true;
-      break;
-    case PS2Preset::MousePort0:
-      // only mouse configured on port 0
-      // this will call setMouse and begin()
-      (new Mouse)->begin(GPIO_NUM_33, GPIO_NUM_32);
-      s_mouseAllocated = true;
-      break;
-    case PS2Preset::MousePort1:
-      // only mouse configured on port 1
-      // this will call setMouse and begin()
-      (new Mouse)->begin(GPIO_NUM_26, GPIO_NUM_27);
-      s_mouseAllocated = true;
-      break;
-  };
+  // NÃO chama end() nem inicializa ULP
+  // Apenas marca como inicializado para satisfazer o VGAController
+  s_portEnabled[0] = false;
+  s_portEnabled[1] = false;
+  s_initDone = true;
 }
 
-/*
+
 void PS2Controller::end()
 {
   if (s_initDone) {
@@ -1263,33 +1220,8 @@ void PS2Controller::end()
 
     for (int p = 0; p < 2; ++p)
       disableRX(p);
-
-    // Para o ULP completamente
-    CLEAR_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_START_TOP);
-    CLEAR_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_FORCE_START_TOP);
-    for (int i = RTCMEM_PROG_START; i < RTCMEM_LASTVAR; ++i)
-      RTC_SLOW_MEM[i] = 0x0000;
-    s_initDone = false;
   }
 }
-  */
-
-  void PS2Controller::end()
-{
-  if (s_initDone) {
-    if (s_keyboardAllocated)
-      delete s_keyboard;
-    s_keyboard = nullptr;
-
-    if (s_mouseAllocated)
-      delete s_mouse;
-    s_mouse = nullptr;
-
-    for (int p = 0; p < 2; ++p)
-      disableRX(p);
-  }
-}
-
 
 
 void PS2Controller::disableRX(int PS2Port)

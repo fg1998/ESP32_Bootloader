@@ -17,6 +17,8 @@
 fabgl::VGAController VGAController;
 fabgl::PS2Controller PS2Controller;
 
+ fabgl::Canvas canvas(&VGAController);
+
 SPIClass spiSD(HSPI);
 Preferences prefs;
 
@@ -36,7 +38,7 @@ void initVGA() {
 }
 
 void drawHeader() {
-    fabgl::Canvas canvas(&VGAController);
+   
 
     canvas.setBrushColor(Color::Black);
     canvas.fillRectangle(0, 0, 639, 199);
@@ -224,37 +226,34 @@ bool performOTA(const char* versionName) {
 void setup() {
     Serial.begin(115200);
     delay(200);
-
-    // VGA e splash aparecem SEMPRE
+ 
     Serial.println("Iniciando VGA...");
     initVGA();
     Serial.println("VGA OK");
     drawHeader();
-    delay(5000);
-
+    delay(3000);
+ 
     Serial.printf("Heap: %d  PSRAM: %s\n", ESP.getFreeHeap(), psramFound() ? "SIM" : "NAO");
-
+ 
     spiSD.begin(SD_CLK, SD_MISO, SD_MOSI, SD_CS);
     if (!SD.begin(SD_CS, spiSD)) {
         statusLine("SD Card", "NOT FOUND", Color::BrightRed);
-        statusLine("Status", "Reseting ...", Color::BrightYellow);
-        Serial.println("SD: nao detectado - reiniciando em 5s");
-        delay(10000);
+        statusLine("Status", "Reset in 5s...", Color::BrightYellow);
+        delay(5000);
         ESP.restart();
         return;
     }
     statusLine("SD Card", "FOUND", Color::BrightGreen);
-
+ 
     if (!SD.exists(FIRMWARE_FILE)) {
         statusLine("firmware.bin", "NOT FOUND", Color::BrightYellow);
         statusLine("Status", "Starting in 5s...", Color::BrightYellow);
-        Serial.println("firmware.bin: nao encontrado - boot em 5s");
         SD.end();
         delay(5000);
         bootEmulatorDirect();
         return;
     }
-
+ 
     char versionName[64] = "firmware_sem_versao";
     if (SD.exists(VERSION_FILE)) {
         File vf = SD.open(VERSION_FILE);
@@ -266,29 +265,35 @@ void setup() {
         }
     }
     statusLine("version.txt", versionName, Color::BrightCyan);
-
+ 
     if (!needsUpdate(versionName)) {
         statusLine("Status", "Firmware OK - Starting in 5s...", Color::BrightGreen);
-        Serial.println("Firmware ja gravado - boot em 5s");
         delay(5000);
         SD.end();
         bootEmulatorDirect();
         return;
     }
-
+ 
     statusLine("Status", "New firmware found!", Color::BrightYellow);
     bool ok = performOTA(versionName);
     SD.end();
-
+ 
     if (ok) {
         statusLine("Status", "Restarting in 5s...", Color::BrightGreen);
         delay(5000);
         bootEmulator();
     } else {
         statusLine("Status", "ERROR! Press RESET", Color::BrightRed);
-        Serial.println("OTA falhou. Aguardando reset manual.");
         while(true) { delay(1000); }
     }
 }
+ 
+void loop() {
+    for(int i=1; 1<=12; i++) {
+    canvas.setPenColor(Color::BrightBlack);
+    canvas.drawText(235, 35, "BOOTLOADER");
+    delay(200);
+    }
+    
 
-void loop() {}
+}
