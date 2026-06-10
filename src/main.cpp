@@ -6,6 +6,8 @@
 #include "fabgl.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
+//extern "C" esp_err_t esp_wifi_stop(void);
+//extern "C" esp_err_t esp_wifi_deinit(void);
 
 #define SD_CLK   14
 #define SD_MISO   2
@@ -24,7 +26,7 @@ Preferences prefs;
 
 RTC_DATA_ATTR int dummy = 0; // mantém layout RTC memory senão o ES
 
-int statusY = 90;
+int statusY = 100;
 
 void initVGA() {
     PS2Controller.begin(PS2Preset::KeyboardPort0, KbdMode::CreateVirtualKeysQueue);
@@ -44,32 +46,50 @@ void drawHeader() {
     canvas.fillRectangle(0, 0, 639, 199);
 
     // "ESP32" em ciano - fonte grande
-    canvas.setPenColor(Color::BrightCyan);
+    
     canvas.setGlyphOptions(GlyphOptions().FillBackground(false).DoubleWidth(1).Bold(1));
-    canvas.selectFont(&fabgl::FONT_8x8);
-    canvas.drawText(270, 25, "ESP32");
+    
+    
+    canvas.selectFont(&fabgl::FONT_10x20);
+    canvas.setPenColor(Color::Yellow);
+
+    canvas.drawText(251, 11, "ESP32");
+    canvas.setPenColor(Color::BrightRed);
+    canvas.drawText(250, 10, "ESP32");
 
     // "BOOTLOADER" em amarelo - fonte grande
-    canvas.setPenColor(Color::BrightYellow);
-    canvas.drawText(235, 35, "BOOTLOADER");
+    canvas.setPenColor(Color::Yellow);
+    canvas.drawText(206, 36, "BOOTLOADER");
+    canvas.setPenColor(Color::BrightRed);
+    canvas.drawText(205, 35, "BOOTLOADER");
 
-    canvas.setPenColor(Color::BrightBlue);
-    canvas.drawLine(40, 55, 599, 55);
-
-    // Info em verde - fonte normal
     canvas.setPenColor(Color::BrightGreen);
     canvas.setGlyphOptions(GlyphOptions().FillBackground(false).DoubleWidth(0).Bold(0));
+
+
+    canvas.setPenColor(Color::BrightWhite);
+    canvas.selectFont(&fabgl::FONT_4x6);
+    canvas.drawText(420,47,"Ver 0.0.1-ALPHA");
+
+    // Info em verde - fonte normal
+    //canvas.setPenColor(Color::BrightGreen);
+    //canvas.setGlyphOptions(GlyphOptions().FillBackground(false).DoubleWidth(0).Bold(0));
+
+    canvas.setPenColor(Color::BrightCyan);
     canvas.selectFont(&fabgl::FONT_6x8);
-    canvas.drawText(225, 60, "by fg1998  |  github.com/fg1998");
+    canvas.drawLine(40, 55, 599, 55);
+    canvas.drawText(225, 60, "by Fernando Garcia 'fg1998'");
+    canvas.drawText(260, 70, "github.com/fg1998");
 
     // Subtítulo em ciano
-    canvas.setPenColor(Color::BrightCyan);
-    canvas.drawText(250, 70, "SD Card Firmware Loader");
-
     canvas.setPenColor(Color::BrightBlue);
-    canvas.drawLine(40, 80, 599, 80);
+    canvas.drawText(235, 80, "SD Card Firmware Loader");
+
+
+    canvas.drawLine(40, 92, 599, 92);
 
     canvas.waitCompletion();
+  
 }
 
 void statusLine(const char* label, const char* value, fabgl::Color color) {
@@ -134,6 +154,8 @@ void bootEmulatorDirect() {
         esp_ota_set_boot_partition(ota0);
         Serial.printf("Boot partition: %s @ 0x%x\n", ota0->label, ota0->address);
     }
+    //esp_wifi_stop();
+    //esp_wifi_deinit();
     delay(500);
     ESP.restart();
 }
@@ -156,6 +178,8 @@ void bootEmulator() {
         esp_partition_erase_range(otadata, 0, otadata->size);
         Serial.println("otadata apagado");
     }
+    //esp_wifi_stop();
+    //esp_wifi_deinit();
     delay(500);
     ESP.restart();
 }
