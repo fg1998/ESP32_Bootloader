@@ -69,7 +69,7 @@ void drawHeader() {
 
     canvas.setPenColor(Color::BrightWhite);
     canvas.selectFont(&fabgl::FONT_4x6);
-    canvas.drawText(420,47,"Ver 0.0.1-ALPHA");
+    canvas.drawText(420,47,"Ver 0.0.2-ALPHA");
 
     // Info em verde - fonte normal
     //canvas.setPenColor(Color::BrightGreen);
@@ -77,7 +77,7 @@ void drawHeader() {
 
     canvas.setPenColor(Color::BrightCyan);
     canvas.selectFont(&fabgl::FONT_6x8);
-    canvas.drawLine(40, 55, 599, 55);
+  
     canvas.drawText(225, 60, "by Fernando Garcia 'fg1998'");
     canvas.drawText(260, 70, "github.com/fg1998");
 
@@ -85,7 +85,7 @@ void drawHeader() {
     canvas.setPenColor(Color::BrightBlue);
     canvas.drawText(235, 80, "SD Card Firmware Loader");
 
-
+    canvas.drawLine(40, 55, 599, 55);
     canvas.drawLine(40, 92, 599, 92);
 
     canvas.waitCompletion();
