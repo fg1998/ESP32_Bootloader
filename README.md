@@ -16,7 +16,7 @@ The bootloader occupies the `factory` partition of the ESP32. Emulators are flas
 
 * [3. Where to find the emulators?](#3-where-to-find-the-emulators)
 
-  * [3.1 How to extract the correct firmware.bin](#31-how-to-extract-the-correct-firmwarebin)
+* [3.1 How to extract the correct firmware.bin](#31-how-to-extract-the-correct-firmwarebin)
 
 * [4. Which emulators work?](#4-which-emulators-work)
 
@@ -85,9 +85,13 @@ pio run --target upload
 
 ## 3. Where to find the emulators?
 
-* **ESPectrum:** [zxespectrum.speccy.org/flash](https://zxespectrum.speccy.org/flash/) — get the `.upg` file · [Direct download](https://alternativebits.com/esp32/ESPectrum.zip)
+* **ESPectrum:** [Visite EremusOne Oficial ESPectrum github page](https://github.com/EremusOne/ESPectrum)
 
-* **CPC:** [Direct download](https://alternativebits.com/esp32/CPCESP.zip)
+  get the `.upg` file, rename it to `firmware.bin` and put on a sd card together with `version.txt` file
+
+* **CPC:** [Visite EremusOne Oficial CPCESP github page](https://github.com/EremusOne/CPCESP_alpha))
+
+  Instructions how to extract firmware.bin in [section 3.1](#31-how-to-extract-the-correct-firmwarebin)
 
 * **MSPX:** Available only to Eremus sponsors. Link coming soon.
 
@@ -142,7 +146,7 @@ Look for offsets returning `0xE9`. The **first** is the bootloader (skip). The *
 
 ***
 
-## 6. ⚠️ Compatibility with emulators compiled with Arduino IDE / Arduino Framework
+## 6. Compatibility with emulators compiled with Arduino IDE / Arduino Framework
 
 Emulators compiled with the **Arduino IDE** or with the **Arduino framework in PlatformIO** automatically write the `otadata` pointing to themselves during boot. This causes the ESP32 to skip the bootloader on the next power-up.
 
