@@ -8,6 +8,9 @@ The bootloader occupies the `factory` partition of the ESP32. Emulators are flas
 
 > ⚠️ **WARNING: This project is in ULTRA SUPER BETA stage.** Use at your own risk, bugs are expected, things will break, and everything can change at any time. You have been warned! 😄
 
+<img src='https://alternativebits.com/esp32/cards.png' width="500px">
+Organize your emulators like this !
+
 ## Table of Contents
 
 * [1. How does it work?](#1-how-does-it-work)
