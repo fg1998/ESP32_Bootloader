@@ -6,6 +6,8 @@
 #include "fabgl.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
+#include "driver/spi_master.h"
+#include "esp_vfs_fat.h"
 //extern "C" esp_err_t esp_wifi_stop(void);
 //extern "C" esp_err_t esp_wifi_deinit(void);
 
@@ -69,7 +71,7 @@ void drawHeader() {
 
     canvas.setPenColor(Color::BrightWhite);
     canvas.selectFont(&fabgl::FONT_4x6);
-    canvas.drawText(420,47,"Ver 0.0.2-ALPHA");
+    canvas.drawText(420,47,"Ver 0.0.4-ALPHA");
 
     // Info em verde - fonte normal
     //canvas.setPenColor(Color::BrightGreen);
@@ -138,10 +140,27 @@ bool needsUpdate(const char* versionOnSD) {
     return (stored != String(versionOnSD));
 }
 
+//void saveVersion(const char* version) {
+//    prefs.begin("sdloader", false);
+//    prefs.putString("version", version);
+//    prefs.end();
+//}
+
+
+//zera a NVS (só no namespace do bootloader) para evitar crashar se a NVS estiver cheia
 void saveVersion(const char* version) {
     prefs.begin("sdloader", false);
-    prefs.putString("version", version);
+    size_t written = prefs.putString("version", version);
+    
+    if (written == 0) {
+        prefs.clear();
+        written = prefs.putString("version", version);
+    }
     prefs.end();
+    
+    if (written == 0) {
+        statusLine("NVS", "FULL - cannot save version!", Color::BrightRed);
+    }
 }
 
 void bootEmulatorDirect() {
@@ -154,9 +173,12 @@ void bootEmulatorDirect() {
         esp_ota_set_boot_partition(ota0);
         Serial.printf("Boot partition: %s @ 0x%x\n", ota0->label, ota0->address);
     }
-    //esp_wifi_stop();
-    //esp_wifi_deinit();
     delay(500);
+    SD.end();
+    spiSD.end();
+    esp_vfs_fat_sdcard_unmount("/sdcard", NULL);
+    spi_bus_free(HSPI_HOST);
+    delay(200);
     ESP.restart();
 }
 
@@ -180,6 +202,10 @@ void bootEmulator() {
     }
     //esp_wifi_stop();
     //esp_wifi_deinit();
+    delay(500);
+    SD.end();
+    spiSD.end();
+    spi_bus_free(HSPI_HOST);
     delay(500);
     ESP.restart();
 }
