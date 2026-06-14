@@ -27,11 +27,13 @@ Organize your emulators like this !
 
 * [6. Compatibility with Arduino IDE emulators](#6-compatibility-with-emulators-compiled-with-arduino-ide--arduino-framework)
 
-* [7. ULTRA SUPER BETA](#7-ultra-super-beta)
+* [7. Adapting any PlatformIO project to work with the bootloader](#7-Adapting-any-PlatformIO-project-to-work-with-the-bootloader)
 
-* [8. Credits](#8-credits)
+* [8. ULTRA SUPER BETA](#7-ultra-super-beta)
 
-* [9. If you liked it](#9-if-you-liked-it-you-know-what-to-do)
+* [9. Credits](#8-credits)
+
+* [10. If you liked it](#9-if-you-liked-it-you-know-what-to-do)
 
 ***
 
@@ -175,17 +177,47 @@ void setup() {
 
 ***
 
-## 7. ULTRA SUPER BETA
+## 7. Adapting any PlatformIO project to work with the bootloader
+
+For a firmware to work with the bootloader, it needs to be compiled with the `ota_0` partition at offset `0xA0000`. That's the address where the bootloader flashes and boots the firmware.
+
+### How to check
+
+Open your project's `partitions.csv` and confirm the app is at `ota_0 @ 0xA0000`:
+
+```csv
+# Name,   Type, SubType, Offset,   Size
+nvs,      data, nvs,     0x9000,   0x5000
+otadata,  data, ota,     0xe000,   0x2000
+factory,  app,  factory, 0x10000,  0x90000
+ota_0,    app,  ota_0,   0xA0000,  0x350000
+spiffs,   data, spiffs,  0x3F0000, 0x10000
+```
+
+> **Note:** the maximum firmware size is **3392KB** (`0x350000`). Make sure your app fits within this limit.
+
+### How to adapt
+
+If your `partitions.csv` uses different offsets, replace it with the template above and add the following to your `platformio.ini`:
+
+```ini
+board_build.partitions = partitions.csv
+board_upload.maximum_size = 3473408
+```
+
+***
+
+## 8. ULTRA SUPER BETA
 
 **It can crash · The API may change · It has bugs · But it works!** — most of the time.
 
-## 8. Credits
+## 9. Credits
 
 * **[EremusOne](https://github.com/EremusOne)** — for ESPectrum, CPCEsp and MSPX
 
 * **[fdivitto (FabGL)](https://github.com/fdivitto/fabgl)** — for the FabGL library
 
-## 9. If you liked it, you know what to do!
+## 10. If you liked it, you know what to do!
 
 Consider a donation through **[this link](https://github.com/sponsors/fg1998)**. I will spend all donated money on BEER 🍺
 
