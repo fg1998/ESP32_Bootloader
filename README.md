@@ -138,6 +138,9 @@ Look for offsets returning `0xE9`. The **first** is the bootloader (skip). The *
 | **CPC** (Amstrad CPC)                | EremusOne/CPCEsp                                              | ✅ Working |
 | **MSPX** (MSX)                       | EremusOne/MSPX                                                | ✅ Working |
 | **VIC20** (VIC20)                    | fdivitto/FabGL                                                | ✅ Working |
+| **MSX**                              | https://github.com/leomanes/fMSX-ESP32-VGA                    | ✅ Working |
+| **TRS Color Computer** (Coco2 & Coco3)   | https://github.com/reyco2000/TTGO-VGA32-COCO                  | ✅ Working |
+| **IBM PC/XT** (DOS, Windows 3.0)      | fdivitto/FabGL                                                | ✅ Working |
 
 ## 5. Known issues
 
