@@ -102,6 +102,8 @@ pio run --target upload
 
 * **VIC20:** [Direct download](https://alternativebits.com/esp32/VIC20.zip)
 
+* **TRS COLOR:** [Direct download](http://alternativebits.com/esp32/coco.zip) 
+
 ## 3.1. How to extract the correct firmware.bin
 
 ### For MSPX and CPC (offset 0x40000)
