@@ -102,6 +102,8 @@ pio run --target upload
 
 * **VIC20:** [Direct download](https://alternativebits.com/esp32/VIC20.zip)
 
+* **TRS COLOR:** [Direct download](http://alternativebits.com/esp32/coco.zip) 
+
 ## 3.1. How to extract the correct firmware.bin
 
 ### For MSPX and CPC (offset 0x40000)
@@ -138,6 +140,9 @@ Look for offsets returning `0xE9`. The **first** is the bootloader (skip). The *
 | **CPC** (Amstrad CPC)                | EremusOne/CPCEsp                                              | ✅ Working |
 | **MSPX** (MSX)                       | EremusOne/MSPX                                                | ✅ Working |
 | **VIC20** (VIC20)                    | fdivitto/FabGL                                                | ✅ Working |
+| **MSX**                              | https://github.com/leomanes/fMSX-ESP32-VGA                    | ✅ Working |
+| **TRS Color Computer** (Coco2 & Coco3)   | https://github.com/reyco2000/TTGO-VGA32-COCO                  | ✅ Working |
+| **IBM PC/XT** (DOS, Windows 3.0)      | fdivitto/FabGL                                                | ✅ Working |
 
 ## 5. Known issues
 
