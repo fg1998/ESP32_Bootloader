@@ -1,5 +1,17 @@
 <img src="https://alternativebits.com/esp32/logo.png" alt="ESP32 Logo"/>
 
+**NEW VERSION 0.2.0**
+
+Allows **multiple emulators on a single card** . Place the `firmware.bin` and `version.txt` files inside folders in the root directory of the SD card (for example: `MSX`,`ESPectrum`, `CPCESP`, etc.), and a new menu will be displayed with the option to choose which emulator will be flashed/executed.
+
+If you prefer to use one card for each emulator, simply place `firmware.bin`  and `version.txt` in the root directory of the SD card, and the flashing process will run when you swap cards.
+
+
+
+If you use a single card for multiple emulators, don't forget to remove `firmware.bin` and `version.txt` from the root directory of the SD card.
+
+## What is this ???
+
 The **ESP32 Bootloader** is a firmware for the **TTGO VGA32 v1.4** (or any ESP32) that turns the ESP32 into an emulator loader (or any other software) via SD card.
 
 The idea is simple: instead of needing a computer to flash a different emulator onto the ESP32 every time, you simply insert an SD card with the desired firmware, power up the device, and it does everything automatically — checks if the firmware is new, flashes it if necessary, and starts the emulator.
@@ -21,19 +33,17 @@ Organize your emulators like this !
 
 * [3.1 How to extract the correct firmware.bin](#31-how-to-extract-the-correct-firmwarebin)
 
-* [4. Which emulators work?](#4-which-emulators-work)
+* [4. Known issues](#4-known-issues)
 
-* [5. Known issues](#5-known-issues)
+* [5. Compatibility with Arduino IDE emulators](#5-compatibility-with-emulators-compiled-with-arduino-ide--arduino-framework)
 
-* [6. Compatibility with Arduino IDE emulators](#6-compatibility-with-emulators-compiled-with-arduino-ide--arduino-framework)
+* [6. Adapting any PlatformIO project to work with the bootloader](#6-Adapting-any-PlatformIO-project-to-work-with-the-bootloader)
 
-* [7. Adapting any PlatformIO project to work with the bootloader](#7-Adapting-any-PlatformIO-project-to-work-with-the-bootloader)
+* [7. ULTRA SUPER BETA](#7-ultra-super-beta)
 
-* [8. ULTRA SUPER BETA](#7-ultra-super-beta)
+* [8. Credits](#8-credits)
 
-* [9. Credits](#8-credits)
-
-* [10. If you liked it](#9-if-you-liked-it-you-know-what-to-do)
+* [9. If you liked it](#9-if-you-liked-it-you-know-what-to-do)
 
 ***
 
@@ -49,32 +59,76 @@ Display splash screen (ESP32 BOOTLOADER)
     │
     ▼
 Check SD card
-    ├── Not found → restart in 5s
+    ├── Not found → press any key to retry
     └── Found
             │
             ▼
-        Read version.txt
+        firmware.bin + version.txt in root?
             │
-            ├── Version matches stored → boot directly to emulator ✅
-            └── Different version → flash firmware.bin → boot to emulator ✅
+            ├── Yes → single-emulator mode
+            │           │
+            │           ▼
+            │       Version matches stored?
+            │           ├── Yes → boot directly to emulator ✅
+            │           └── No  → flash firmware.bin → boot to emulator ✅
+            │
+            └── No  → multi-emulator mode
+                        │
+                        ▼
+                    Scan all folders on SD card
+                        │
+                        ▼
+                    For each folder with firmware.bin + version.txt
+                        → add to menu (folder name)
+                        │
+                        ▼
+                    Show menu (UP/DOWN/ENTER via PS2)
+                    Cursor starts on the currently installed emulator (*)
+                        │
+                        ▼
+                    User selects an entry
+                        │
+                        ▼
+                    Version matches stored?
+                        ├── Yes → boot directly to emulator ✅
 ```
 
 ### SD card structure
 
+### Single-emulator mode (files in SD root)
+
 | File           | Description                                                            |
-| -------------- | ---------------------------------------------------------------------- |
+| -------------- | ------------------------------------------------------------------------ |
 | `firmware.bin` | The emulator firmware                                                  |
 | `version.txt`  | A simple text with the firmware name/version (e.g.: `ESPectrum_1.4.5`) |
 
-### About FabGL and PS2Controller
+### Multi-emulator mode (one folder per emulator)
 
-The bootloader uses the **FabGL** library to display the splash screen via VGA. FabGL normally initializes the PS2 controller (keyboard) using the **ULP** (Ultra Low Power coprocessor) of the ESP32 — which caused conflicts with emulators that also need the PS2/ULP.
+```
+/SD card root
+├── ESPectrum/
+│   ├── firmware.bin
+│   └── version.txt
+├── CPCESP/
+│   ├── firmware.bin
+│   └── version.txt
+├── MSPX/
+│   ├── firmware.bin
+│   └── version.txt
+└── ...
+```
 
-The solution was to locally modify the `ps2controller.cpp` of FabGL so that `begin()` does not initialize the ULP. With this, the keyboard of the emulators works normally after boot (God willing!).
+| File/Folder      | Description                                                              |
+| ---------------- | ------------------------------------------------------------------------ |
+| `<FolderName>/`   | One folder per emulator. The folder name is what shows up in the menu  |
+| `firmware.bin`    | The emulator firmware, inside its folder                               |
+| `version.txt`     | Firmware name/version for that emulator (e.g.: `CPCESP.0.85`)          |
+
+If both `firmware.bin` and `version.txt` exist in the SD card root, the bootloader uses single-emulator mode and skips the menu. Otherwise, it scans every folder on the card and builds the menu from the ones containing both files.
 
 ### About firmware.bin
 
-**Do not use the web flasher** **`.bin`** **directly!** For **ESPectrum**, use the `.upg` file directly — just rename it to `firmware.bin`. For **MSPX** and **CPC**, you need to extract the app from the merged `.bin` (see section 4.1).
+**Do not use the web flasher** **`.bin`** **directly!** For **ESPectrum**, use the `.upg` file directly — just rename it to `firmware.bin`. For **MSPX** and **CPC**, you need to extract the app from the merged `.bin` (see section 4.1) or when the author makes the files available in their repository..
 
 ## 2. How to flash the bootloader?
 
@@ -102,7 +156,7 @@ pio run --target upload
 
 * **VIC20:** [Direct download](https://alternativebits.com/esp32/VIC20.zip)
 
-* **TRS COLOR:** [Direct download](http://alternativebits.com/esp32/coco.zip) 
+* **TRS COLOR:** [Direct download](http://alternativebits.com/esp32/coco.zip)
 
 ## 3.1. How to extract the correct firmware.bin
 
@@ -132,19 +186,7 @@ for offset in [0x0000, 0x1000, 0x8000, 0xe000, 0x10000, 0x40000, 0x90000, 0xa000
 
 Look for offsets returning `0xE9`. The **first** is the bootloader (skip). The **second** is the app (use this).
 
-## 4. Which emulators work?
-
-| Emulator                             | Repository                                                    | Status    |
-| ------------------------------------ | ------------------------------------------------------------- | --------- |
-| **ESPectrum** (ZX Spectrum 48K/128K) | [EremusOne/ESPectrum](https://github.com/EremusOne/ESPectrum) | ✅ Working |
-| **CPC** (Amstrad CPC)                | EremusOne/CPCEsp                                              | ✅ Working |
-| **MSPX** (MSX)                       | EremusOne/MSPX                                                | ✅ Working |
-| **VIC20** (VIC20)                    | fdivitto/FabGL                                                | ✅ Working |
-| **MSX**                              | https://github.com/leomanes/fMSX-ESP32-VGA                    | ✅ Working |
-| **TRS Color Computer** (Coco2 & Coco3)   | https://github.com/reyco2000/TTGO-VGA32-COCO                  | ✅ Working |
-| **IBM PC/XT** (DOS, Windows 3.0)      | fdivitto/FabGL                                                | ✅ Working |
-
-## 5. Known issues
+## 4. Known issues
 
 * ⚠️ **PS2 Keyboard** — inconsistent behavior. If keyboard doesn't respond after boot, power off and on again.
 
@@ -156,7 +198,7 @@ Look for offsets returning `0xE9`. The **first** is the bootloader (skip). The *
 
 ***
 
-## 6. Compatibility with emulators compiled with Arduino IDE / Arduino Framework
+## 5. Compatibility with emulators compiled with Arduino IDE / Arduino Framework
 
 Emulators compiled with the **Arduino IDE** or with the **Arduino framework in PlatformIO** automatically write the `otadata` pointing to themselves during boot. This causes the ESP32 to skip the bootloader on the next power-up.
 
@@ -182,7 +224,7 @@ void setup() {
 
 ***
 
-## 7. Adapting any PlatformIO project to work with the bootloader
+## 6. Adapting any PlatformIO project to work with the bootloader
 
 For a firmware to work with the bootloader, it needs to be compiled with the `ota_0` partition at offset `0xA0000`. That's the address where the bootloader flashes and boots the firmware.
 
@@ -212,17 +254,17 @@ board_upload.maximum_size = 3473408
 
 ***
 
-## 8. ULTRA SUPER BETA
+## 7. ULTRA SUPER BETA
 
 **It can crash · The API may change · It has bugs · But it works!** — most of the time.
 
-## 9. Credits
+## 8. Credits
 
 * **[EremusOne](https://github.com/EremusOne)** — for ESPectrum, CPCEsp and MSPX
 
 * **[fdivitto (FabGL)](https://github.com/fdivitto/fabgl)** — for the FabGL library
 
-## 10. If you liked it, you know what to do!
+## 9. If you liked it, you know what to do!
 
 Consider a donation through **[this link](https://github.com/sponsors/fg1998)**. I will spend all donated money on BEER 🍺
 
