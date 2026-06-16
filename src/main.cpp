@@ -8,6 +8,9 @@
 #include "esp_vfs_fat.h"
 #include "video.h"
 #include "charset.h"
+#include "logo.h"
+
+
 
 #define SD_CLK   14
 #define SD_MISO   2
@@ -43,6 +46,8 @@ RTC_DATA_ATTR int dummy = 0;
 #define COLOR_CYAN    (0b001111)
 #define COLOR_WHITE   (0b111111)
 
+#include "scroller.h"
+
 // ---------------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------------
@@ -63,6 +68,18 @@ void drawString(int x, int y, const char* str, uint8_t ink, uint8_t paper) {
             crt[ix++^2] = (pixels & 0x04) ? ink : paper;
             crt[ix++^2] = (pixels & 0x02) ? ink : paper;
             crt[ix++^2] = (pixels & 0x01) ? ink : paper;
+        }
+    }
+}
+
+void drawLogo(int x, int y) {
+    uint8_t *crt = _frameBuffer;
+    for (int row = 0; row < LOGO_H; row++) {
+        int ix = (y + row) * HRES + x;
+        for (int col = 0; col < LOGO_W; col++) {
+            uint8_t c = logo_data[row * LOGO_W + col];
+            c |= (uint8_t)(Video.SBits & 0xFF);
+            crt[ix++^2] = c;
         }
     }
 }
@@ -90,7 +107,7 @@ void drawLine(int x1, int y1, int x2, int color) {
 // ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
-int statusY = 100;
+int statusY = 94;
 
 void statusLine(const char* label, const char* value, uint8_t color) {
     char buf[64];
@@ -115,16 +132,17 @@ void drawProgress(int percent, size_t written, size_t total) {
 // ---------------------------------------------------------------------------
 void drawHeader() {
     fillRect(0, 0, HRES, VRES/VDIV, COLOR_BLACK);
-    drawString(68,  8,  "ESP32",        COLOR_YELLOW, COLOR_BLACK);
-    drawString(32,  18, "BOOTLOADER",   COLOR_YELLOW, COLOR_BLACK);
-    drawString(148, 28, "Ver 0.2.0",    COLOR_WHITE,  COLOR_BLACK);
-    drawLine(8, 38, HRES-9, COLOR_BLUE);
-    drawLine(8, 39, HRES-9, COLOR_BLUE);
-    drawString(20, 46, "by Fernando Garcia fg1998", COLOR_CYAN,  COLOR_BLACK);
-    drawString(20, 56, "github.com/fg1998",         COLOR_CYAN,  COLOR_BLACK);
-    drawString(20, 66, "SD Card Firmware Loader",   COLOR_BLUE,  COLOR_BLACK);
-    drawLine(8, 78, HRES-9, COLOR_BLUE);
-    drawLine(8, 79, HRES-9, COLOR_BLUE);
+    //drawString(115,  8,  "ESP32",        COLOR_YELLOW, COLOR_BLACK);
+    //drawString(100,  18, "BOOTLOADER",   COLOR_YELLOW, COLOR_BLACK);
+    drawLogo((HRES - LOGO_W) / 2, 4);  // centralizado, Y=4
+
+
+    drawString(100, 64, "Ver 0.2.0a",    COLOR_WHITE,  COLOR_BLACK);
+
+    drawLine(8, 74, HRES-9, COLOR_BLUE);
+    drawString(57, 79, "alternativebits.com/esp32",         COLOR_CYAN,  COLOR_BLACK);
+    drawLine(8, 90, HRES-9, COLOR_BLUE);
+
 }
 
 // ---------------------------------------------------------------------------
@@ -154,6 +172,8 @@ void saveVersion(const char* version) {
 // ---------------------------------------------------------------------------
 void bootEmulatorDirect() {
     Serial.println("Iniciando emulador (direto)...");
+    detachInterrupt(digitalPinToInterrupt(PS2_CLK));
+
     const esp_partition_t* ota0 = esp_partition_find_first(
         ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
     if (ota0) {
@@ -167,7 +187,10 @@ void bootEmulatorDirect() {
 }
 
 void bootEmulator() {
+
     Serial.println("Iniciando emulador...");
+    detachInterrupt(digitalPinToInterrupt(PS2_CLK));
+    
     const esp_partition_t* ota0 = esp_partition_find_first(
         ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
     if (ota0) esp_ota_set_boot_partition(ota0);
@@ -187,6 +210,7 @@ void bootEmulator() {
 // OTA genérico (recebe o caminho do firmware.bin)
 // ---------------------------------------------------------------------------
 bool doOTA(const char* binPath, const char* versionName) {
+
     File bin = SD.open(binPath);
     if (!bin) { statusLine("firmware.bin", "OPEN ERROR", COLOR_RED); return false; }
 
@@ -285,7 +309,7 @@ uint8_t ps2_get_key() {
 // Menu
 // ---------------------------------------------------------------------------
 #define MAX_ENTRIES  16
-#define MENU_Y_START 92
+#define MENU_Y_START 134
 #define MENU_LINE_H  10
 #define MAX_VISIBLE  13
 
@@ -334,7 +358,7 @@ void scanFolders() {
 
 void drawMenu(int selected, int scrollOffset) {
     fillRect(0, MENU_Y_START - 12, HRES, VRES/VDIV - MENU_Y_START + 12, COLOR_BLACK);
-    drawString(4, MENU_Y_START - 10, "SELECT EMULATOR  [UP/DOWN/ENTER]", COLOR_WHITE, COLOR_BLACK);
+    drawString(20, MENU_Y_START - 10, "SELECT EMULATOR  [UP/DOWN/ENTER]", COLOR_WHITE, COLOR_BLACK);
 
     int visible = min(menuCount, MAX_VISIBLE);
     for (int i = 0; i < visible; i++) {
@@ -368,7 +392,22 @@ void drawMenu(int selected, int scrollOffset) {
 int runMenu() {
     if (menuCount == 0) return -1;
 
-    int selected = 0, scrollOffset = 0;
+    // Acha o item instalado (com *) para usar como selecao inicial
+    prefs.begin("sdloader", true);
+    String currentVersion = prefs.getString("version", "");
+    prefs.end();
+
+    int selected = 0;
+    for (int i = 0; i < menuCount; i++) {
+        if (String(menuEntries[i].version) == currentVersion) {
+            selected = i;
+            break;
+        }
+    }
+
+    int scrollOffset = 0;
+    if (selected >= MAX_VISIBLE) scrollOffset = selected - MAX_VISIBLE + 1;
+
     ps2_init();
     drawMenu(selected, scrollOffset);
 
@@ -403,9 +442,13 @@ void setup() {
     Serial.println("VGA OK");
     drawHeader();
     delay(3000);
+    scrollStart();
+
+
+
 
     Serial.printf("Heap: %d  PSRAM: %s\n", ESP.getFreeHeap(), psramFound() ? "SIM" : "NAO");
-
+    spiSD.begin(SD_CLK, SD_MISO, SD_MOSI, SD_CS);
     if (!SD.begin(SD_CS, spiSD)) {
         statusLine("SD Card", "NOT FOUND", COLOR_RED);
         statusLine("Status", "Press any key to retry", COLOR_YELLOW);
@@ -417,6 +460,7 @@ void setup() {
 
 
     statusLine("SD Card", "FOUND", COLOR_GREEN);
+
 
     // --- Modo 1: firmware.bin + version.txt na raiz ---
     if (SD.exists(FIRMWARE_FILE) && SD.exists(VERSION_FILE)) {
@@ -431,7 +475,7 @@ void setup() {
 
         if (!needsUpdate(versionName)) {
             statusLine("Status", "Firmware OK - Starting...", COLOR_GREEN);
-            delay(5000); SD.end(); bootEmulatorDirect(); return;
+            delay(1000); SD.end(); bootEmulatorDirect(); return;
         }
 
         statusLine("Status", "New firmware found!", COLOR_YELLOW);
@@ -474,7 +518,7 @@ void setup() {
 
     if (!needsUpdate(versionName)) {
         statusLine("Status", "Firmware OK - Starting...", COLOR_GREEN);
-        delay(5000); SD.end(); bootEmulatorDirect(); return;
+        delay(1000); SD.end(); bootEmulatorDirect(); return;
     }
 
     statusLine("Status", "New firmware found!", COLOR_YELLOW);
