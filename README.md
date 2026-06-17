@@ -45,6 +45,8 @@ Organize your emulators like this !
 
 * [9. If you liked it](#9-if-you-liked-it-you-know-what-to-do)
 
+* [10. License](#10-License)
+
 ***
 
 ## 1. How does it work?
@@ -275,3 +277,10 @@ If you want to hire me as a freelancer for WEB or embedded projects, get in touc
 *by Fernando Garcia —* *[fg1998](https://github.com/fg1998)*
 
 *find me —* *<fg1998@gmail.com>*
+
+
+## 10. License
+
+This project is licensed under the GNU General Public License v3.0 (GPLv3).
+
+See the LICENSE file for more details.
