@@ -137,7 +137,7 @@ void drawHeader() {
     drawLogo((HRES - LOGO_W) / 2, 4);  // centralizado, Y=4
 
 
-    drawString(100, 64, "Ver 0.2.0a",    COLOR_WHITE,  COLOR_BLACK);
+    drawString(100, 64, "Ver 0.2.1a",    COLOR_WHITE,  COLOR_BLACK);
 
     drawLine(8, 74, HRES-9, COLOR_BLUE);
     drawString(57, 79, "alternativebits.com/esp32",         COLOR_CYAN,  COLOR_BLACK);

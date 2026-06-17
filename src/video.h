@@ -2,7 +2,7 @@
  * Video for emulators
  */
 
-// #define L320
+#define L320
 #ifdef L320
 // 320*240 
 #define HFRONT          8
