@@ -35,9 +35,9 @@ Organize your emulators like this !
 
 * [4. Known issues](#4-known-issues)
 
-* [5. Compatibility with Arduino IDE emulators](#5-compatibility-with-emulators-compiled-with-arduino-ide--arduino-framework)
+* [5. How to adapt any project to work with the bootloader](#5-How-to-adapt-any-project-to-work-with-the-bootloader)
 
-* [6. Adapting any PlatformIO project to work with the bootloader](#6-Adapting-any-PlatformIO-project-to-work-with-the-bootloader)
+* [6. Bootloader partition table (for reference)](#6-Bootloader-partition-table)
 
 * [7. ULTRA SUPER BETA](#7-ultra-super-beta)
 
@@ -200,39 +200,43 @@ Look for offsets returning `0xE9`. The **first** is the bootloader (skip). The *
 
 ***
 
-## 5. Compatibility with emulators compiled with Arduino IDE / Arduino Framework
+## 5. How to adapt any project to work with the bootloader
 
-Emulators compiled with the **Arduino IDE** or with the **Arduino framework in PlatformIO** automatically write the `otadata` pointing to themselves during boot. This causes the ESP32 to skip the bootloader on the next power-up.
+The bootloader always flashes firmware to the `ota_0` partition (`0xA0000`). For the app to return control to the bootloader on the next power-up, it must erase the `otadata` partition during startup — otherwise the ESP32 will boot directly into the app, bypassing the bootloader.
 
-To fix this, add the following block at the **very beginning of** **`setup()`** in the emulator, before anything else:
+Add the following block at the **very beginning of `setup()`**, before anything else:
 
 ```cpp
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
 
 void setup() {
-    // Ensures the bootloader runs on the next reset
+    // Ensures the bootloader runs on the next power-up
     const esp_partition_t* otadata = esp_partition_find_first(
         ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
     if (otadata) {
         esp_partition_erase_range(otadata, 0, otadata->size);
     }
-
     // ... rest of original setup
 }
 ```
 
-> **Emulators compiled with ESP-IDF or PlatformIO (espidf framework)** do not need this modification and work normally with the bootloader.
+Once this is done:
 
-***
+1. Compile the project normally (`pio run`)
+2. Copy `.pio/build/<env>/firmware.bin` to the emulator's folder on the SD card
+3. Create a `version.txt` file with the version name (e.g. `MyApp_1.0`)
+4. The bootloader will flash and boot it automatically
 
-## 6. Adapting any PlatformIO project to work with the bootloader
+> **Note:** The maximum firmware size is **3392KB** (`0x350000`). If your firmware exceeds this limit, it won't fit in the `ota_0` partition.
 
-For a firmware to work with the bootloader, it needs to be compiled with the `ota_0` partition at offset `0xA0000`. That's the address where the bootloader flashes and boots the firmware.
+> **ESP-IDF projects** (`framework = espidf`) may not need this modification, depending on whether the project manages `otadata` internally.
 
-### How to check
+---
 
-Open your project's `partitions.csv` and confirm the app is at `ota_0 @ 0xA0000`:
+## 6. Bootloader partition table
+
+This is the partition layout used by the bootloader. It is provided here for reference only — you do not need to replicate this in your own projects.
 
 ```csv
 # Name,   Type, SubType, Offset,   Size
@@ -243,18 +247,13 @@ ota_0,    app,  ota_0,   0xA0000,  0x350000
 spiffs,   data, spiffs,  0x3F0000, 0x10000
 ```
 
-> **Note:** the maximum firmware size is **3392KB** (`0x350000`). Make sure your app fits within this limit.
-
-### How to adapt
-
-If your `partitions.csv` uses different offsets, replace it with the template above and add the following to your `platformio.ini`:
-
-```ini
-board_build.partitions = partitions.csv
-board_upload.maximum_size = 3473408
-```
-
-***
+| Partition | Offset     | Size    | Description                        |
+|-----------|------------|---------|------------------------------------|
+| nvs       | 0x9000     | 20KB    | Non-volatile storage               |
+| otadata   | 0xE000     | 8KB     | OTA boot selector                  |
+| factory   | 0x10000    | 576KB   | The bootloader itself              |
+| ota_0     | 0xA0000    | 3392KB  | Where emulator firmwares are stored|
+| spiffs    | 0x3F0000   | 64KB    | Reserved                           |
 
 ## 7. ULTRA SUPER BETA
 
