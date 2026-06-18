@@ -107,7 +107,7 @@ void drawLine(int x1, int y1, int x2, int color) {
 // ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
-int statusY = 94;
+int statusY = 54;
 
 void statusLine(const char* label, const char* value, uint8_t color) {
     char buf[64];
@@ -132,16 +132,10 @@ void drawProgress(int percent, size_t written, size_t total) {
 // ---------------------------------------------------------------------------
 void drawHeader() {
     fillRect(0, 0, HRES, VRES/VDIV, COLOR_BLACK);
-    //drawString(115,  8,  "ESP32",        COLOR_YELLOW, COLOR_BLACK);
-    //drawString(100,  18, "BOOTLOADER",   COLOR_YELLOW, COLOR_BLACK);
     drawLogo((HRES - LOGO_W) / 2, 4);  // centralizado, Y=4
-
-
-    drawString(100, 64, "Ver 0.2.1a",    COLOR_WHITE,  COLOR_BLACK);
-
-    drawLine(8, 74, HRES-9, COLOR_BLUE);
-    drawString(57, 79, "alternativebits.com/esp32",         COLOR_CYAN,  COLOR_BLACK);
-    drawLine(8, 90, HRES-9, COLOR_BLUE);
+    drawString(130, 31, "Ver 0.2.3a",    COLOR_WHITE,  COLOR_BLACK);
+    drawString(80, 41, "alternativebits.com/esp32",         COLOR_CYAN,  COLOR_BLACK);
+    drawLine(8, 50, HRES-9, COLOR_BLUE);
 
 }
 
@@ -309,7 +303,7 @@ uint8_t ps2_get_key() {
 // Menu
 // ---------------------------------------------------------------------------
 #define MAX_ENTRIES  16
-#define MENU_Y_START 134
+#define MENU_Y_START 64
 #define MENU_LINE_H  10
 #define MAX_VISIBLE  13
 

@@ -18,7 +18,7 @@ const char* scrollText =
     "Supported: ESPectrum (ZX Spectrum) - CPCESP (Amstrad) - MSPX (MSX) - VIC20 - PCEmulator - COCO and many others !  "
     "github.com/fg1998/esp32-bootloader   "
     "alternativebits.com/esp32   "      
-    "Thanks to: EremusONE, Fabrizio Di Vittorio, David Crespo, OulanB, bitluni, VTrucco, Sir Clive Sinclair, Guys from ROb_Go WhatsApp Group (dont be shy, everyone!), MSX and Spectrum people from Brazil and around the World !!!!!!!!          "
+    "Thanks to: EremusONE, Fabrizio Di Vittorio, David Crespo, OulanB, bitluni, VTrucco, Rodolfo Guerra, Sir Clive Sinclair, Guys from RobGo_RG WhatsApp Group (dont be shy, everyone!), MSX and Spectrum people from Brazil and around the World !!!!!!!!          "
     "   ";
 
 const uint8_t scrollColors[] = {
@@ -70,10 +70,11 @@ void scrollDrawFrame() {
 
     for (int i = 0; i < (HRES / 6) + 2; i++) {
         int charIdx = (startChar + i) % len;
-        uint8_t ink = scrollColors[(i + scrollColorOffset) % SCROLL_COLOR_COUNT];
+        uint8_t ink = scrollColors[scrollColorOffset / 6];  // mesma cor pra todos
         int x = i * 6 - pixelOffset;
         scrollDrawChar(x, scrollText[charIdx], ink, COLOR_BLACK);
     }
+    scrollColorOffset = (scrollColorOffset + 1) % (SCROLL_COLOR_COUNT * 10);
 
     // Avança cor e posição
     scrollPos = (scrollPos + SCROLL_SPEED) % (len * 6);
