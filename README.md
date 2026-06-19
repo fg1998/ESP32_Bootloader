@@ -1,4 +1,4 @@
-<img src="https://alternativebits.com/esp32/logo.png" alt="ESP32 Logo"/>
+<img src="https://alternativebits.com/esp32/logo_app.png" alt="ESP32 Logo"/>
 
 **NEW VERSION 0.2.0**
 
