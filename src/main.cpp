@@ -9,6 +9,7 @@
 #include "video.h"
 #include "charset.h"
 #include "logo.h"
+#include "nvs_flash.h"
 
 
 
@@ -22,9 +23,18 @@
 #define PS2_DAT 32
 #define PS2_CLK 33
 
-#define KEY_UP    0x75
-#define KEY_DOWN  0x72
-#define KEY_ENTER 0x5A
+#define KEY_UP      0x75
+#define KEY_DOWN    0x72
+#define KEY_ENTER   0x5A
+#define KEY_F1  0x05
+#define KEY_N_KEY   0x31
+#define KEY_A_KEY   0x1C
+#define KEY_O_KEY   0x44
+#define KEY_R_KEY   0x2D
+
+#define SPEAKER_PIN 25
+
+#define VERSION "ver 0.3.0a"
 
 #define PS2_BUFFER_SIZE 16
 volatile uint8_t ps2_buffer[PS2_BUFFER_SIZE];
@@ -46,7 +56,15 @@ RTC_DATA_ATTR int dummy = 0;
 #define COLOR_CYAN    (0b001111)
 #define COLOR_WHITE   (0b111111)
 
+const uint32_t AUTOBOOT_MS = 10000;
+
 #include "scroller.h"
+
+
+#define MAX_ENTRIES  16
+#define MENU_Y_START 64
+#define MENU_LINE_H  10
+#define MAX_VISIBLE  13
 
 // ---------------------------------------------------------------------------
 // Rendering
@@ -104,6 +122,27 @@ void drawLine(int x1, int y1, int x2, int color) {
     }
 }
 
+
+
+// ---------------------------------------------------------------------------
+// SPEAKER
+// ---------------------------------------------------------------------------
+void speakerClick() {
+    for (int i = 0; i < 3; i++) {
+        dacWrite(SPEAKER_PIN, 255);
+        delayMicroseconds(200);
+        dacWrite(SPEAKER_PIN, 0);
+        delayMicroseconds(200);
+    }
+    dacWrite(SPEAKER_PIN, 128);
+}
+
+
+
+
+
+
+
 // ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
@@ -122,7 +161,7 @@ void drawProgress(int percent, size_t written, size_t total) {
     snprintf(buf, sizeof(buf), "Flashing %3d%%  (%dKB/%dKB)  ",
              percent, (int)(written/1024), (int)(total/1024));
     drawString(20, statusY, buf, COLOR_YELLOW, COLOR_BLACK);
-    int barW = (216 * percent) / 100;
+    int barW = (280 * percent) / 100;
     fillRect(20,        statusY + 10, barW,       6, COLOR_GREEN);
     fillRect(20 + barW, statusY + 10, 216 - barW, 6, COLOR_BLACK);
 }
@@ -133,8 +172,8 @@ void drawProgress(int percent, size_t written, size_t total) {
 void drawHeader() {
     fillRect(0, 0, HRES, VRES/VDIV, COLOR_BLACK);
     drawLogo((HRES - LOGO_W) / 2, 4);  // centralizado, Y=4
-    drawString(130, 31, "Ver 0.2.3a",    COLOR_WHITE,  COLOR_BLACK);
-    drawString(80, 41, "alternativebits.com/esp32",         COLOR_CYAN,  COLOR_BLACK);
+    drawString(130, 31, VERSION,    COLOR_WHITE,  COLOR_BLACK);
+    drawString(90, 41, "alternativebits.com/esp32",         COLOR_CYAN,  COLOR_BLACK);
     drawLine(8, 50, HRES-9, COLOR_BLUE);
 
 }
@@ -175,13 +214,13 @@ void bootEmulatorDirect() {
         Serial.printf("Boot partition: %s @ 0x%x\n", ota0->label, ota0->address);
     }
     delay(500);
+    gpio_reset_pin(GPIO_NUM_25);  // <-- aqui
     SD.end(); spiSD.end(); spi_bus_free(HSPI_HOST);
     delay(200);
     ESP.restart();
 }
 
 void bootEmulator() {
-
     Serial.println("Iniciando emulador...");
     detachInterrupt(digitalPinToInterrupt(PS2_CLK));
     
@@ -195,6 +234,7 @@ void bootEmulator() {
         Serial.println("otadata apagado");
     }
     delay(500);
+    gpio_reset_pin(GPIO_NUM_25);  // <-- aqui
     SD.end(); spiSD.end(); spi_bus_free(HSPI_HOST);
     delay(500);
     ESP.restart();
@@ -302,10 +342,69 @@ uint8_t ps2_get_key() {
 // ---------------------------------------------------------------------------
 // Menu
 // ---------------------------------------------------------------------------
-#define MAX_ENTRIES  16
-#define MENU_Y_START 64
-#define MENU_LINE_H  10
-#define MAX_VISIBLE  13
+
+void showMaintenanceMenu() {
+    fillRect(0, MENU_Y_START - 12, HRES, VRES/VDIV - MENU_Y_START + 12, COLOR_BLACK);
+    drawString(10, MENU_Y_START,      "*** MAINTENANCE ***",           COLOR_YELLOW, COLOR_BLACK);
+    drawString(10, MENU_Y_START + 14, "N - Clear Bootloader NVS",      COLOR_WHITE,  COLOR_BLACK);
+    drawString(10, MENU_Y_START + 24, "A - Clear ALL NVS",             COLOR_WHITE,  COLOR_BLACK);
+    drawString(10, MENU_Y_START + 34, "O - Clear Otadata",             COLOR_WHITE,  COLOR_BLACK);
+    drawString(10, MENU_Y_START + 44, "R - Reset ESP32",               COLOR_WHITE,  COLOR_BLACK);
+    drawString(10, MENU_Y_START + 58, "ESC - Cancel",                  COLOR_CYAN,   COLOR_BLACK);
+
+    while (true) {
+        uint8_t key = ps2_get_key();
+        if (key == 0) continue;
+
+        const char* msg  = nullptr;
+        const char* done = nullptr;
+
+        if      (key == KEY_N_KEY) { msg = "Clear Bootloader NVS?"; done = "Bootloader NVS cleared!"; }
+        else if (key == KEY_A_KEY) { msg = "Clear ALL NVS?";         done = "ALL NVS cleared!"; }
+        else if (key == KEY_O_KEY) { msg = "Clear Otadata?";         done = "Otadata cleared!"; }
+        else if (key == KEY_R_KEY) { msg = "Reset ESP32?";           done = "ESP32 will reset!"; }
+        else if (key == 0x76)      { break; } // ESC
+
+        if (!msg) continue;
+
+        // Confirmação Y/N
+        fillRect(0, MENU_Y_START - 12, HRES, VRES/VDIV - MENU_Y_START + 12, COLOR_BLACK);
+        drawString(10, MENU_Y_START,      msg,                            COLOR_YELLOW, COLOR_BLACK);
+        drawString(10, MENU_Y_START + 14, "Y to confirm, N to cancel",    COLOR_WHITE,  COLOR_BLACK);
+
+        uint8_t conf = 0;
+        while (conf == 0) {
+            conf = ps2_get_key();
+        }
+
+        if (conf != 0x35) { // nao foi Y
+            // volta pro menu de manutenção
+            fillRect(0, MENU_Y_START - 12, HRES, VRES/VDIV - MENU_Y_START + 12, COLOR_BLACK);
+            drawString(10, MENU_Y_START,      "*** MAINTENANCE ***",           COLOR_YELLOW, COLOR_BLACK);
+            drawString(10, MENU_Y_START + 14, "N - Clear Bootloader NVS",      COLOR_WHITE,  COLOR_BLACK);
+            drawString(10, MENU_Y_START + 24, "A - Clear ALL NVS",             COLOR_WHITE,  COLOR_BLACK);
+            drawString(10, MENU_Y_START + 34, "O - Clear Otadata",             COLOR_WHITE,  COLOR_BLACK);
+            drawString(10, MENU_Y_START + 48, "ESC - Cancel",                  COLOR_CYAN,   COLOR_BLACK);
+            continue;
+        }
+
+        // Executa
+        if      (key == KEY_N_KEY) { prefs.begin("sdloader", false); prefs.clear(); prefs.end(); }
+        else if (key == KEY_A_KEY) { nvs_flash_erase(); nvs_flash_init(); }
+        else if (key == KEY_O_KEY) {
+            const esp_partition_t* otadata = esp_partition_find_first(
+                ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
+            if (otadata) esp_partition_erase_range(otadata, 0, otadata->size);
+        }
+        else if (key == KEY_R_KEY) { ESP.restart(); }
+
+        fillRect(0, MENU_Y_START - 12, HRES, VRES/VDIV - MENU_Y_START + 12, COLOR_BLACK);
+        drawString(10, MENU_Y_START,      done,                           COLOR_GREEN, COLOR_BLACK);
+        drawString(10, MENU_Y_START + 14, "Press any key to reboot",      COLOR_WHITE, COLOR_BLACK);
+        while (ps2_get_key() == 0);
+        ESP.restart();
+    }
+}
 
 struct MenuEntry {
     char name[64];
@@ -352,7 +451,8 @@ void scanFolders() {
 
 void drawMenu(int selected, int scrollOffset) {
     fillRect(0, MENU_Y_START - 12, HRES, VRES/VDIV - MENU_Y_START + 12, COLOR_BLACK);
-    drawString(20, MENU_Y_START - 10, "SELECT EMULATOR  [UP/DOWN/ENTER]", COLOR_WHITE, COLOR_BLACK);
+    drawString(5, MENU_Y_START - 10, "SELECT EMULATOR [UP/DOWN/ENTER]", COLOR_WHITE, COLOR_BLACK);
+    drawString(205, MENU_Y_START - 10, "F1=Maintenance", COLOR_MAGENTA, COLOR_BLACK);
 
     int visible = min(menuCount, MAX_VISIBLE);
     for (int i = 0; i < visible; i++) {
@@ -401,15 +501,60 @@ int runMenu() {
 
     int scrollOffset = 0;
     if (selected >= MAX_VISIBLE) scrollOffset = selected - MAX_VISIBLE + 1;
+    ps2_init();  
+    delay(500);
+    ps2_head = ps2_tail = 0;
+    ps2_bit = 0;
+    ps2_data = 0;
 
-    ps2_init();
     drawMenu(selected, scrollOffset);
 
+    bool hasInstalled = (currentVersion.length() > 0);
+    uint32_t autobootStart = millis(); 
+
+    drawMenu(selected, scrollOffset);
+
+    // Autoboot: só ativo se tem um emulador instalado (*)
+
+
+
     while (true) {
+        // Countdown no canto da tela
+        if (hasInstalled) {
+            uint32_t elapsed = millis() - autobootStart;
+            if (elapsed >= AUTOBOOT_MS) {
+                return selected;  // autoboot!
+            }
+            int secsLeft = (AUTOBOOT_MS - elapsed) / 1000 + 1;
+            char countdown[16];
+            snprintf(countdown, sizeof(countdown), "%ds ", secsLeft);
+            drawString(300, MENU_Y_START - 10, countdown, COLOR_YELLOW, COLOR_BLACK);
+        }
+
+        // Verifica tecla sem bloquear
+        if (ps2_head == ps2_tail) {
+            delay(50);
+            continue;
+        }
+
         uint8_t key = ps2_get_key();
         if (key == 0) continue;
+
+        // Qualquer tecla cancela o autoboot
+        if (hasInstalled) {
+            hasInstalled = false;
+            // Limpa o countdown da tela
+            drawString(HRES - 54, MENU_Y_START - 10, "        ", COLOR_BLACK, COLOR_BLACK);
+        }
+
+        speakerClick();
         Serial.printf("Key: 0x%02X\n", key);
 
+        if (key == KEY_F1) {
+            showMaintenanceMenu();
+            drawMenu(selected, scrollOffset);
+            continue;
+        }
         if (key == KEY_UP && selected > 0) {
             selected--;
             if (selected < scrollOffset) scrollOffset--;
@@ -423,7 +568,6 @@ int runMenu() {
         }
     }
 }
-
 // ---------------------------------------------------------------------------
 // Setup
 // ---------------------------------------------------------------------------
@@ -476,8 +620,8 @@ void setup() {
         bool ok = doOTA(FIRMWARE_FILE, versionName);
         SD.end();
         if (ok) {
-            statusLine("Status", "Restarting in 5s...", COLOR_GREEN);
-            delay(5000); bootEmulator();
+            statusLine("Status", "Restarting in 3s...", COLOR_GREEN);
+            delay(3000); bootEmulator();
         } else {
             statusLine("Status", "ERROR! Press RESET", COLOR_RED);
             while(true) delay(1000);
@@ -520,8 +664,8 @@ void setup() {
     SD.end();
 
     if (ok) {
-        statusLine("Status", "Restarting in 5s...", COLOR_GREEN);
-        delay(5000); bootEmulator();
+        statusLine("Status", "Restarting in 3s...", COLOR_GREEN);
+        delay(3000); bootEmulator();
     } else {
         statusLine("Status", "ERROR! Press RESET", COLOR_RED);
         while(true) delay(1000);
