@@ -10,6 +10,7 @@
 #include "charset.h"
 #include "logo.h"
 #include "nvs_flash.h"
+#include "driver/gpio.h"
 
 
 
@@ -34,7 +35,7 @@
 
 #define SPEAKER_PIN 25
 
-#define VERSION "ver 0.3.0a"
+#define VERSION "ver 0.3.1a"
 
 #define PS2_BUFFER_SIZE 16
 volatile uint8_t ps2_buffer[PS2_BUFFER_SIZE];
@@ -65,6 +66,10 @@ const uint32_t AUTOBOOT_MS = 10000;
 #define MENU_Y_START 64
 #define MENU_LINE_H  10
 #define MAX_VISIBLE  13
+
+
+
+
 
 // ---------------------------------------------------------------------------
 // Rendering
@@ -446,6 +451,9 @@ void scanFolders() {
         }
         entry.close();
     }
+    qsort(menuEntries, menuCount, sizeof(MenuEntry), [](const void* a, const void* b) {
+        return strcasecmp(((MenuEntry*)a)->name, ((MenuEntry*)b)->name);
+    });
     root.close();
 }
 
@@ -670,6 +678,14 @@ void setup() {
         statusLine("Status", "ERROR! Press RESET", COLOR_RED);
         while(true) delay(1000);
     }
+}
+
+void ps2_shutdown() {
+    detachInterrupt(digitalPinToInterrupt(PS2_CLK));
+    gpio_reset_pin(GPIO_NUM_32);  // PS2_DAT
+    gpio_reset_pin(GPIO_NUM_33);  // PS2_CLK
+    // Para o coprocessador ULP
+    WRITE_PERI_REG(0x3ff48094, 0);  // RTC_CNTL_ULP_CP_CTRL_REG endereço direto
 }
 
 void loop() { delay(1000); }
