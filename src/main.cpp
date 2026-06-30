@@ -25,17 +25,29 @@
 #define PS2_CLK 33
 
 #define KEY_UP      0x75
+#define KEY_Q       0x15
+
 #define KEY_DOWN    0x72
+#define KEY_A       0x1C
+
 #define KEY_ENTER   0x5A
+
 #define KEY_F1  0x05
+#define KEY_1   0x16
+
 #define KEY_N_KEY   0x31
 #define KEY_A_KEY   0x1C
 #define KEY_O_KEY   0x44
 #define KEY_R_KEY   0x2D
+#define KEY_P       0x4D
+
+#define KEY_SPACE   0x29
+#define KEY_ESC     0x76
+
 
 #define SPEAKER_PIN 25
 
-#define VERSION "ver 0.3.1a"
+#define VERSION "ver 0.3.2a"
 
 #define PS2_BUFFER_SIZE 16
 volatile uint8_t ps2_buffer[PS2_BUFFER_SIZE];
@@ -178,7 +190,7 @@ void drawHeader() {
     fillRect(0, 0, HRES, VRES/VDIV, COLOR_BLACK);
     drawLogo((HRES - LOGO_W) / 2, 4);  // centralizado, Y=4
     drawString(130, 31, VERSION,    COLOR_WHITE,  COLOR_BLACK);
-    drawString(90, 41, "alternativebits.com/esp32",         COLOR_CYAN,  COLOR_BLACK);
+    drawString(77, 41, "www.alternativebits.com/esp32",         COLOR_CYAN,  COLOR_BLACK);
     drawLine(8, 50, HRES-9, COLOR_BLUE);
 
 }
@@ -350,12 +362,12 @@ uint8_t ps2_get_key() {
 
 void showMaintenanceMenu() {
     fillRect(0, MENU_Y_START - 12, HRES, VRES/VDIV - MENU_Y_START + 12, COLOR_BLACK);
-    drawString(10, MENU_Y_START,      "*** MAINTENANCE ***",           COLOR_YELLOW, COLOR_BLACK);
+    drawString(10, MENU_Y_START,      "*** MENU ***",           COLOR_YELLOW, COLOR_BLACK);
     drawString(10, MENU_Y_START + 14, "N - Clear Bootloader NVS",      COLOR_WHITE,  COLOR_BLACK);
     drawString(10, MENU_Y_START + 24, "A - Clear ALL NVS",             COLOR_WHITE,  COLOR_BLACK);
     drawString(10, MENU_Y_START + 34, "O - Clear Otadata",             COLOR_WHITE,  COLOR_BLACK);
     drawString(10, MENU_Y_START + 44, "R - Reset ESP32",               COLOR_WHITE,  COLOR_BLACK);
-    drawString(10, MENU_Y_START + 58, "ESC - Cancel",                  COLOR_CYAN,   COLOR_BLACK);
+    drawString(10, MENU_Y_START + 58, "ESC/SPACE - Cancel",                  COLOR_CYAN,   COLOR_BLACK);
 
     while (true) {
         uint8_t key = ps2_get_key();
@@ -368,7 +380,7 @@ void showMaintenanceMenu() {
         else if (key == KEY_A_KEY) { msg = "Clear ALL NVS?";         done = "ALL NVS cleared!"; }
         else if (key == KEY_O_KEY) { msg = "Clear Otadata?";         done = "Otadata cleared!"; }
         else if (key == KEY_R_KEY) { msg = "Reset ESP32?";           done = "ESP32 will reset!"; }
-        else if (key == 0x76)      { break; } // ESC
+        else if ((key == KEY_ESC || key == KEY_SPACE))      { break; } // ESC
 
         if (!msg) continue;
 
@@ -459,8 +471,8 @@ void scanFolders() {
 
 void drawMenu(int selected, int scrollOffset) {
     fillRect(0, MENU_Y_START - 12, HRES, VRES/VDIV - MENU_Y_START + 12, COLOR_BLACK);
-    drawString(5, MENU_Y_START - 10, "SELECT EMULATOR [UP/DOWN/ENTER]", COLOR_WHITE, COLOR_BLACK);
-    drawString(205, MENU_Y_START - 10, "F1=Maintenance", COLOR_MAGENTA, COLOR_BLACK);
+    drawString(10, MENU_Y_START - 10, "SELECT [Q/UP - A/DOWN - ENTER]", COLOR_WHITE, COLOR_BLACK);
+    drawString(200, MENU_Y_START - 10, "F1/1=Menu", COLOR_MAGENTA, COLOR_BLACK);
 
     int visible = min(menuCount, MAX_VISIBLE);
     for (int i = 0; i < visible; i++) {
@@ -558,16 +570,16 @@ int runMenu() {
         speakerClick();
         Serial.printf("Key: 0x%02X\n", key);
 
-        if (key == KEY_F1) {
+        if ((key == KEY_F1 || key == KEY_1)) {
             showMaintenanceMenu();
             drawMenu(selected, scrollOffset);
             continue;
         }
-        if (key == KEY_UP && selected > 0) {
+        if ((key == KEY_UP || key == KEY_Q) && selected > 0) {
             selected--;
             if (selected < scrollOffset) scrollOffset--;
             drawMenu(selected, scrollOffset);
-        } else if (key == KEY_DOWN && selected < menuCount - 1) {
+        } else if ((key == KEY_DOWN || key == KEY_A) && selected < menuCount - 1) {
             selected++;
             if (selected >= scrollOffset + MAX_VISIBLE) scrollOffset++;
             drawMenu(selected, scrollOffset);

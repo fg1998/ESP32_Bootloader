@@ -1,0 +1,9 @@
+Version 0.3.2a
+- Bootloader Speed Up (thanks to Leo Manes)
+- Add new keys to help ZX Spectrum/TK90X keyboard users on ROBG_RG (Thanks to Rodolfo Guerra)
+   1/f1 - Q/UP  - A/DOWN - P/Right - O/LEFT 
+
+
+Version 0.3.1a
+- Minor Interface Changes
+- Sort emulators List by folder name
