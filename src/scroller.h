@@ -18,7 +18,7 @@ const char* scrollText =
     "Supported: ESPectrum (ZX Spectrum) - CPCESP (Amstrad) - MSPX (MSX) - VIC20 - PCEmulator - COCO and many others !  "
     "github.com/fg1998/esp32-bootloader   "
     "alternativebits.com/esp32   "      
-    "Thanks to: EremusONE, Fabrizio Di Vittorio, David Crespo, OulanB, bitluni, VTrucco, reyco2000, Rodolfo Guerra, Miguel Roberto, @joselitooliveira24, Sir Clive Sinclair, Guys from RobGo_RG WhatsApp Group (don't be shy, everyone!), MSX and Spectrum people from Brazil, Uruguay, Spain and around the World !!!!!!!!          "
+    "Thanks to: EremusONE, Fabrizio Di Vittorio, David Crespo, OulanB, bitluni, VTrucco, leomanes, reyco2000, Rodolfo Guerra, Miguel Roberto, @joselitooliveira24, Sir Clive Sinclair, Guys from RobGo_RG WhatsApp Group (don't be shy, everyone!), MSX and Spectrum people from Brazil, Uruguay, Spain and around the World !!!!!!!!          "
     "   ";
 
 

@@ -595,6 +595,9 @@ void setup() {
     Serial.begin(115200);
     delay(200);
 
+
+
+
     Serial.println("Iniciando VGA...");
     videoInit();
     Serial.println("VGA OK");
