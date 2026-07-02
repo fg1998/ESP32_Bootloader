@@ -1,13 +1,15 @@
 #pragma once
+#include <fabgl.h>
+
+extern fabgl::Canvas cv;
 
 // ---------------------------------------------------------------------------
-// Scroller demoscene - texto rolando da direita para a esquerda com rainbow
+// Scroller demoscene - FabGL version
 // ---------------------------------------------------------------------------
 
-#define SCROLL_Y      228   // linha Y do scroll (parte inferior)
-#define SCROLL_H      8     // altura em pixels (fonte 6x8)
-#define SCROLL_SPEED  2     // pixels por frame
-#define SCROLL_FPS    30    // frames por segundo
+#define SCROLL_Y      228
+#define SCROLL_SPEED  2
+#define SCROLL_FPS    40
 
 const char* scrollText =
 "                                    "
@@ -17,67 +19,50 @@ const char* scrollText =
     "Load multiple emulators from SD card - no computer needed!   "
     "Supported: ESPectrum (ZX Spectrum) - CPCESP (Amstrad) - MSPX (MSX) - VIC20 - PCEmulator - COCO and many others !  "
     "github.com/fg1998/esp32-bootloader   "
-    "alternativebits.com/esp32   "      
-    "Thanks to: EremusONE, Fabrizio Di Vittorio, David Crespo, OulanB, bitluni, VTrucco, leomanes, reyco2000, Rodolfo Guerra, Miguel Roberto, @joselitooliveira24, Sir Clive Sinclair, Guys from RobGo_RG WhatsApp Group (don't be shy, everyone!), MSX and Spectrum people from Brazil, Uruguay, Spain and around the World !!!!!!!!          "
+    "alternativebits.com/esp32   "
+    "Thanks to: EremusONE, Fabrizio Di Vittorio, David Crespo, OulanB, bitluni, VTrucco, leomanes, reyco2000, Rodolfo Guerra, Miguel Roberto, @joselitooliveira24, Sir Clive Sinclair, Guys from RobGo_RG WhatsApp Group, MSX and Spectrum people from Brazil, Uruguay, Spain and around the World !!!!!!!!          "
     "   ";
 
-
-const uint8_t scrollColors[] = {
-    COLOR_RED, COLOR_YELLOW, COLOR_GREEN, COLOR_CYAN,
-    COLOR_BLUE, COLOR_MAGENTA, COLOR_WHITE
+const Color scrollColors[] = {
+    Color::Red, Color::Yellow, Color::BrightGreen, Color::Cyan,
+    Color::Blue, Color::Magenta, Color::White
 };
 #define SCROLL_COLOR_COUNT 7
 
 int scrollPos = 0;
 int scrollColorOffset = 0;
 
-void scrollDrawChar(int x, char ch, uint8_t ink, uint8_t paper) {
-    if (ch < 32) ch = 32;
-    uint8_t *crt = _frameBuffer;
-    ink   |= (uint8_t)(Video.SBits & 0xFF);
-    paper |= (uint8_t)(Video.SBits & 0xFF);
-
-    for (int row = 0; row < 8; row++) {
-        uint8_t pixels = charsetData[((ch - 32) << 3) + row];
-        int screenY = SCROLL_Y + row;
-        if (screenY >= VRES/VDIV) continue;
-
-        for (int col = 0; col < 6; col++) {
-            int screenX = x + col;
-            if (screenX < 0 || screenX >= HRES) continue;
-            int ix = screenY * HRES + screenX;
-            uint8_t bit = (pixels >> (5 - col)) & 1;
-            crt[ix ^ 2] = bit ? ink : paper;
-        }
-    }
-}
+// Largura de cada caractere na FONT_8x8
+#define SCROLL_CHAR_W 6
+#define SCROLL_CHAR_H 12
 
 void scrollDrawFrame() {
-    // Limpa a linha do scroll
-    uint8_t bg = COLOR_BLACK | (uint8_t)(Video.SBits & 0xFF);
-    uint8_t *crt = _frameBuffer;
-    for (int row = SCROLL_Y; row < SCROLL_Y + SCROLL_H; row++) {
-        if (row >= VRES/VDIV) break;
-        int ix = row * HRES;
-        for (int col = 0; col < HRES; col++) {
-            crt[(ix + col) ^ 2] = bg;
-        }
-    }
-
-    // Desenha os caracteres visíveis com cor rainbow
     int len = strlen(scrollText);
-    int startChar = scrollPos / 6;
-    int pixelOffset = scrollPos % 6;
+    int startChar = scrollPos / SCROLL_CHAR_W;
+    int pixelOffset = scrollPos % SCROLL_CHAR_W;
 
-    for (int i = 0; i < (HRES / 6) + 2; i++) {
+    // Limpa linha do scroll
+    cv.setBrushColor(Color::Black);
+    cv.fillRectangle(0, SCROLL_Y, HRES - 1, SCROLL_Y + SCROLL_CHAR_H - 1);
+
+    // Desenha caracteres
+    cv.setGlyphOptions(GlyphOptions().FillBackground(true));
+    cv.selectFont(&fabgl::FONT_6x12);
+
+    Color ink = scrollColors[scrollColorOffset / 6 % SCROLL_COLOR_COUNT];
+
+    int charsOnScreen = (HRES / SCROLL_CHAR_W) + 2;
+    for (int i = 0; i < charsOnScreen; i++) {
         int charIdx = (startChar + i) % len;
-        uint8_t ink = scrollColors[(i + scrollColorOffset) % SCROLL_COLOR_COUNT];
-        int x = i * 6 - pixelOffset;
-        scrollDrawChar(x, scrollText[charIdx], ink, COLOR_BLACK);
+        char buf[2] = { scrollText[charIdx], 0 };
+        int x = i * SCROLL_CHAR_W - pixelOffset;
+        if (x >= HRES) break;
+        cv.setPenColor(ink);
+        cv.setBrushColor(Color::Black);
+        cv.drawText(x, SCROLL_Y, buf);
     }
 
-    // Avança cor e posição
-    scrollPos = (scrollPos + SCROLL_SPEED) % (len * 6);
+    scrollPos = (scrollPos + SCROLL_SPEED) % (len * SCROLL_CHAR_W);
     scrollColorOffset = (scrollColorOffset + 1) % (SCROLL_COLOR_COUNT * 6);
 }
 
@@ -92,11 +77,10 @@ void scrollStart() {
     xTaskCreatePinnedToCore(
         scrollTask,
         "scroller",
-        2048,
+        4096,
         NULL,
         1,
         NULL,
         0
     );
 }
-
