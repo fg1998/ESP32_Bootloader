@@ -1,18 +1,17 @@
 #include <Arduino.h>
 #include <SD.h>
-#include <SPI.h>
+//#include <SPI.h>
 #include <Preferences.h>
-#include <WiFi.h>
+
 #include <fabgl.h>
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
-#include "driver/gpio.h"
+
 #include "nvs_flash.h"
 #include "logo.h"
 
-#include <SimpleFTPServer.h>
 
-FtpServer ftpSrv;
+
 
 
 #define SD_CLK   14
@@ -40,7 +39,7 @@ FtpServer ftpSrv;
 #define KEY_SPACE   0x29
 
 #define SPEAKER_PIN 25
-#define VERSION "ver 0.4.0a"
+#define VERSION "ver 0.5.0a"
 
 static fabgl::Bitmap* infoBitmap = nullptr;
 static char lastBitmapPath[128] = "";
@@ -76,7 +75,7 @@ fabgl::Canvas          cv(&DisplayController);
 // ---------------------------------------------------------------------------
 // PS2 por interrupção (mantém o mesmo driver)
 // ---------------------------------------------------------------------------
-#define PS2_BUFFER_SIZE 16
+#define PS2_BUFFER_SIZE 64
 volatile uint8_t ps2_buffer[PS2_BUFFER_SIZE];
 volatile int ps2_head = 0, ps2_tail = 0;
 volatile int ps2_bit = 0;
@@ -226,49 +225,6 @@ void drawProgress(int percent, size_t written, size_t total) {
     fillRect(20 + barW, statusY + 15, 280 - barW, 6, C_BLACK);
 }
 
-// ---------------------------------------------------------------------------
-// WiFi
-// ---------------------------------------------------------------------------
-String wifiIP = "";
-
-
-void wifiInit() {
-    if (!SD.exists("/wificonfig.rc")) {
-        Serial.println("WiFi: wificonfig.rc nao encontrado");
-        return;
-    }
-    File f = SD.open("/wificonfig.rc");
-    if (!f) return;
-    String ssid = f.readStringUntil('\n'); ssid.trim();
-    String pass = f.readStringUntil('\n'); pass.trim();
-    f.close();
-    if (ssid.length() == 0) return;
-    Serial.printf("WiFi: conectando em '%s'...\n", ssid.c_str());
-    WiFi.begin(ssid.c_str(), pass.c_str());
-    int tries = 0;
-    while (WiFi.status() != WL_CONNECTED && tries < 20) {
-        delay(500); tries++;
-    }
-    if (WiFi.status() == WL_CONNECTED) {
-        wifiIP = WiFi.localIP().toString();
-        Serial.printf("WiFi: conectado! IP: %s\n", wifiIP.c_str());
-        ftpSrv.begin("esp32", "esp32");
-        Serial.println("FTP: iniciado porta 21");
-    } else {
-        Serial.println("WiFi: falhou");
-    }
-}
-
-
-void drawWifiStatus() {
-    char buf[30];
-    if (wifiIP.length() > 0) {
-        snprintf(buf, sizeof(buf), "FTP://%s", wifiIP.c_str());
-        drawString(&fabgl::FONT_5x7, 200, 23, buf, C_GREEN, C_BLACK);
-    } else {
-        drawString(&fabgl::FONT_5x7, 280, 23, "NO FTP", C_RED, C_BLACK);
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Header
@@ -278,6 +234,7 @@ void drawHeader() {
     drawLogo((HRES - LOGO_W) / 2, 4);
     drawString(130, 19, VERSION, C_WHITE, C_BLACK);
     drawString(80, 29, "www.alternativebits.com/esp32", C_CYAN, C_BLACK);
+    
     drawLine(8, 42, HRES - 9, C_BLUE);
 }
 
@@ -628,13 +585,13 @@ void drawInfoPanel(int x, int y, int w, int h) {
 
 void drawMenu(int selected, int scrollOffset) {
 
-
-
-
-
     fillRect(0, MENU_Y_START, HRES, VRES - MENU_Y_START + 12, C_BLACK);
     drawString(10, MENU_Y_START, "SELECT [Q/UP - A/DOWN - ENTER]", C_WHITE,   C_BLACK);
     drawString(220, MENU_Y_START, "F1/1=Menu/Help",                        C_MAGENTA, C_BLACK);
+
+    char sc[16];
+    snprintf(sc, sizeof(sc), "%d/%d", selected + 1, menuCount);
+    drawString(HRES - (int)strlen(sc) * 6 - 4, 35, sc, C_CYAN, C_BLACK);
 
     prefs.begin("sdloader", true);
     String currentVersion = prefs.getString("version", "");
@@ -658,9 +615,7 @@ void drawMenu(int selected, int scrollOffset) {
         drawString(8, y, line, ink, paper);
     }
 
-    //loadInfoText(menuEntries[selected].path);
-    //drawInfoPanel(PANEL_X, MENU_Y_START + 12, PANEL_W, PANEL_H);
-    drawWifiStatus();
+
 }
 
 int runMenu() {
@@ -696,25 +651,27 @@ int runMenu() {
 
     while (true) {
 
-        
-
-
         if (hasInstalled) {
             uint32_t elapsed = millis() - autobootStart;
             if (elapsed >= AUTOBOOT_MS) return selected;
             int secsLeft = (AUTOBOOT_MS - elapsed) / 1000 + 1;
             char countdown[16];
             snprintf(countdown, sizeof(countdown), "%ds ", secsLeft);
-            drawString(300, MENU_Y_START - 10, countdown, C_YELLOW, C_BLACK);
+            drawString(300, MENU_Y_START - 20, countdown, C_YELLOW, C_BLACK);
         }
 
         if (ps2_head == ps2_tail) { 
-            ftpSrv.handleFTP();  
             continue; 
         }
 
         uint8_t key = ps2_get_key();
         if (key == 0) continue;
+
+        ps2_head = ps2_tail = 0;
+        ps2_bit = 0;
+        ps2_data = 0;
+
+
 
         if (hasInstalled) {
             hasInstalled = false;
@@ -780,8 +737,7 @@ void setup() {
 
     statusLine("SD Card", "FOUND", C_GREEN);
 
-    wifiInit();
-    //drawWifiStatus();
+
 
     // --- Modo 1: firmware.bin + version.txt na raiz ---
     if (SD.exists(FIRMWARE_FILE) && SD.exists(VERSION_FILE)) {
