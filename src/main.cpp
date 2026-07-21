@@ -37,7 +37,7 @@
 #define KEY_SPACE   0x29
 
 #define SPEAKER_PIN 25
-#define VERSION "ver 0.5.0a"
+#define VERSION "ver 0.5.1a"
 
 static fabgl::Bitmap* infoBitmap = nullptr;
 static char lastBitmapPath[128] = "";
@@ -49,7 +49,7 @@ int statusY = 43;
 
 #define MENU_LINE_H   12
 #define MAX_VISIBLE   12   
-#define MENU_Y_START  43
+#define MENU_Y_START  45
 #define MAX_ENTRIES   35
 
 
@@ -189,12 +189,12 @@ void drawLogo(int x, int y) {
 // ---------------------------------------------------------------------------
 void speakerClick() {
     for (int i = 0; i < 50; i++) {
-        dacWrite(SPEAKER_PIN, 255);
+        dacWrite(SPEAKER_PIN, 40);
         delayMicroseconds(500);
         dacWrite(SPEAKER_PIN, 0);
         delayMicroseconds(500);
     }
-    dacWrite(SPEAKER_PIN, 128);
+    dacWrite(SPEAKER_PIN, 20);
 }
 
 // ---------------------------------------------------------------------------
@@ -219,8 +219,8 @@ void drawProgress(int percent, size_t written, size_t total) {
              percent, (int)(written/1024), (int)(total/1024));
     drawString(20, statusY, buf, C_YELLOW, C_BLACK);
     int barW = (300 * percent) / 100;
-    fillRect(20,        statusY + 15, barW,       6, C_GREEN);
-    fillRect(20 + barW, statusY + 15, 280 - barW, 6, C_BLACK);
+    fillRect(20,        statusY + 14, barW,       6, C_GREEN);
+    fillRect(20 + barW, statusY + 14, 280 - barW, 6, C_BLACK);
 }
 
 
@@ -457,124 +457,6 @@ void loadInfoText(const char* folderPath) {
     f.close();
 }
 
-void loadInfoBitmap(const char* folderPath) {
-    char bmpPath[140];
-    snprintf(bmpPath, sizeof(bmpPath), "%s/info.bmp", folderPath);
-
-    // Já carregado?
-    if (strcmp(lastBitmapPath, bmpPath) == 0) return;
-    strcpy(lastBitmapPath, bmpPath);
-
-    // Libera bitmap anterior
-    if (infoBitmap) {
-        free(infoBitmap->data);
-        delete infoBitmap;
-        infoBitmap = nullptr;
-    }
-
-    if (!SD.exists(bmpPath)) return;
-
-    File f = SD.open(bmpPath);
-    if (!f) return;
-
-    // Lê header BMP
-    uint8_t header[54];
-    f.read(header, 54);
-
-    int w = *(int*)&header[18];
-    int h = *(int*)&header[22];
-    int dataOffset = *(int*)&header[10];
-    int bpp = *(short*)&header[28];
-
-    Serial.printf("[BMP] %dx%d bpp=%d\n", w, h, bpp);
-
-    if (bpp != 8 && bpp != 4) {
-        Serial.println("[BMP] apenas 4bpp e 8bpp suportados");
-        f.close();
-        return;
-    }
-
-    // Lê paleta (para 4bpp: 16 cores * 4 bytes)
-    int paletteSize = (bpp == 4) ? 16 : 256;
-    uint8_t palette[256 * 4];
-    f.seek(54);
-    f.read(palette, paletteSize * 4);
-
-    // Cria bitmap FabGL
-    infoBitmap = new fabgl::Bitmap(w, h, nullptr, fabgl::PixelFormat::RGBA8888, false);
-    infoBitmap->data = (uint8_t*)ps_malloc(w * h * 4);
-
-    // Lê pixels (BMP é de baixo para cima)
-    f.seek(dataOffset);
-    int rowSize = ((bpp * w + 31) / 32) * 4;
-    uint8_t rowBuf[256];
-
-    for (int y = h - 1; y >= 0; y--) {
-        f.read(rowBuf, rowSize);
-        for (int x = 0; x < w; x++) {
-            int colorIdx;
-            if (bpp == 4) {
-                colorIdx = (x % 2 == 0) ? (rowBuf[x/2] >> 4) : (rowBuf[x/2] & 0x0F);
-            } else {
-                colorIdx = rowBuf[x];
-            }
-            uint8_t b = palette[colorIdx * 4 + 0];
-            uint8_t g = palette[colorIdx * 4 + 1];
-            uint8_t r = palette[colorIdx * 4 + 2];
-            int idx = (y * w + x) * 4;
-            infoBitmap->data[idx + 0] = r;
-            infoBitmap->data[idx + 1] = g;
-            infoBitmap->data[idx + 2] = b;
-            infoBitmap->data[idx + 3] = 255;
-        }
-    }
-    f.close();
-    Serial.println("[BMP] carregado OK");
-}
-
-
-
-void drawInfoPanel(int x, int y, int w, int h) {
-    // Retângulo branco de borda
-    cv.selectFont(&fabgl::FONT_5x7);
-    cv.setPenColor(C_WHITE);
-    cv.drawRectangle(x, y, x + w, y + h - 21);
-
-    // Área interna com 4px de margem
-    fillRect(x + 1, y + 1, w - 2, h - 25, C_BLACK);
-
-    if (infoText[0] == '\0') return;
-
-    cv.selectFont(&fabgl::FONT_5x7);
-    cv.setPenColor(C_CYAN);
-    cv.setBrushColor(C_BLACK);
-    cv.setGlyphOptions(GlyphOptions().FillBackground(true));
-
-    int lineY = y + 6;           // 4px de margem interna vertical
-    int lineH = 9;
-    int maxChars = (w - 8) / 5; // 4px de margem em cada lado
-
-    char line[64];
-    int li = 0;
-
-    for (int i = 0; infoText[i] != '\0'; i++) {
-        char c = infoText[i];
-        if (c == '\n' || li >= maxChars - 1) {
-            line[li] = '\0';
-            cv.drawText(x + 6, lineY, line);  // 4px de margem horizontal
-            lineY += lineH;
-            if (lineY + lineH > y + h - 4) break;
-            li = 0;
-            if (c == '\n') continue;
-        }
-        line[li++] = c;
-    }
-    if (li > 0 && lineY + lineH <= y + h - 4) {
-        line[li] = '\0';
-        cv.drawText(x + 6, lineY, line);
-    }
-}
-
 
 
 
@@ -771,7 +653,7 @@ void setup() {
     int selected = runMenu();
     if (selected < 0) { delay(3000); ESP.restart(); return; }
 
-    fillRect(0, MENU_Y_START - 12, HRES, VRES - MENU_Y_START + 12, C_BLACK);
+    fillRect(0, MENU_Y_START - 23, HRES, VRES - MENU_Y_START + 12, C_BLACK);
     statusY = MENU_Y_START;
     statusLine("Selected", menuEntries[selected].name, C_GREEN);
 
